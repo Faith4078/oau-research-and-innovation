@@ -14,7 +14,7 @@ import {
   getCurrentSession,
   issueSession,
   revokeCurrentSession,
-  revokeUserSessions,
+  switchCurrentSession,
 } from '#/lib/session.server.ts'
 
 const optionalEmailSchema = z.preprocess(
@@ -39,6 +39,10 @@ const signUpSchema = z.object({
 const signInSchema = z.object({
   email: z.string().email().transform(normalizeEmail),
   password: z.string().min(1, 'Password is required'),
+})
+
+const switchAccountSchema = z.object({
+  sessionId: z.string().uuid(),
 })
 
 function normalizeEmail(email: string) {
@@ -129,7 +133,6 @@ export const signIn = createServerFn({ method: 'POST' })
       throw new Error('Invalid email or password')
     }
 
-    await revokeUserSessions(user.id)
     await issueSession(user.id)
 
     await db
@@ -146,6 +149,19 @@ export const signOut = createServerFn({ method: 'POST' }).handler(async () => {
 
   return { ok: true }
 })
+
+export const switchAccount = createServerFn({ method: 'POST' })
+  .validator(switchAccountSchema)
+  .handler(async ({ data }) => {
+    requireServerEnv()
+
+    const session = await switchCurrentSession(data.sessionId)
+
+    return {
+      ok: true,
+      user: { id: session.user.id, email: session.user.email },
+    }
+  })
 
 export const getCurrentUser = createServerFn({ method: 'GET' }).handler(
   async () => {

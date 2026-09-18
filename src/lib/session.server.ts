@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { createHash, randomBytes } from 'node:crypto'
 
 import { and, eq, gt, isNull } from 'drizzle-orm'
@@ -13,6 +14,8 @@ import type { UserRole } from '#/db/schema.ts'
 
 export const SESSION_COOKIE_NAME = '__Host-oau-ri-session'
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
+const SESSION_COOKIE_PREFIX = 'v2.'
+const MAX_BROWSER_SESSIONS = 5
 
 export type SessionUser = {
   id: string
@@ -30,6 +33,19 @@ export type CurrentSession = {
   sessionId: string
   expiresAt: Date
   user: SessionUser
+}
+
+export type SessionAccount = CurrentSession & {
+  isCurrent: boolean
+}
+
+type SessionCookieJar = {
+  activeToken: string
+  tokens: string[]
+}
+
+type ResolvedSession = CurrentSession & {
+  token: string
 }
 
 function getSessionExpiry() {
@@ -54,7 +70,15 @@ export function hashSessionToken(token: string) {
   return createHash('sha256').update(token).digest('base64url')
 }
 
-export function readSessionToken() {
+function decodeCookieValue(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+function readRawSessionCookie() {
   const cookieHeader = getRequestHeader('cookie')
 
   if (!cookieHeader) {
@@ -71,18 +95,102 @@ export function readSessionToken() {
     const cookieName = cookiePart.slice(0, separatorIndex)
 
     if (cookieName === SESSION_COOKIE_NAME) {
-      return cookiePart.slice(separatorIndex + 1)
+      return decodeCookieValue(cookiePart.slice(separatorIndex + 1))
     }
   }
 
   return null
 }
 
-export function setSessionCookie(token: string) {
+function normalizeSessionJar(jar: SessionCookieJar) {
+  const tokens: string[] = []
+
+  for (const token of jar.tokens) {
+    if (token && !tokens.includes(token)) {
+      tokens.push(token)
+    }
+  }
+
+  if (jar.activeToken && !tokens.includes(jar.activeToken)) {
+    tokens.push(jar.activeToken)
+  }
+
+  const limitedTokens = tokens.slice(-MAX_BROWSER_SESSIONS)
+  const activeToken = limitedTokens.includes(jar.activeToken)
+    ? jar.activeToken
+    : (limitedTokens.at(-1) ?? null)
+
+  if (!activeToken) {
+    return null
+  }
+
+  return { activeToken, tokens: limitedTokens }
+}
+
+function decodeSessionJar(value: string | null) {
+  if (!value) {
+    return null
+  }
+
+  if (!value.startsWith(SESSION_COOKIE_PREFIX)) {
+    return normalizeSessionJar({ activeToken: value, tokens: [value] })
+  }
+
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(
+        value.slice(SESSION_COOKIE_PREFIX.length),
+        'base64url',
+      ).toString('utf8'),
+    ) as unknown
+
+    if (typeof parsed !== 'object' || parsed === null) {
+      return null
+    }
+
+    const activeToken =
+      'activeToken' in parsed && typeof parsed.activeToken === 'string'
+        ? parsed.activeToken
+        : ''
+    const tokens =
+      'tokens' in parsed && Array.isArray(parsed.tokens)
+        ? parsed.tokens.filter(
+            (token): token is string => typeof token === 'string',
+          )
+        : []
+
+    return normalizeSessionJar({ activeToken, tokens })
+  } catch {
+    return null
+  }
+}
+
+function encodeSessionJar(jar: SessionCookieJar) {
+  return `${SESSION_COOKIE_PREFIX}${Buffer.from(JSON.stringify(jar)).toString(
+    'base64url',
+  )}`
+}
+
+function readSessionJar() {
+  return decodeSessionJar(readRawSessionCookie())
+}
+
+export function readSessionToken() {
+  return readSessionJar()?.activeToken ?? null
+}
+
+function setSessionJarCookie(jar: SessionCookieJar) {
+  const normalizedJar = normalizeSessionJar(jar)
+
+  if (!normalizedJar) {
+    clearSessionCookie()
+    return
+  }
+
   setResponseHeader(
     'Set-Cookie',
     [
-      `${SESSION_COOKIE_NAME}=${token}`,
+      `${SESSION_COOKIE_NAME}=${encodeSessionJar(normalizedJar)}`,
       'HttpOnly',
       'Secure',
       'SameSite=Lax',
@@ -90,6 +198,10 @@ export function setSessionCookie(token: string) {
       `Max-Age=${SESSION_TTL_SECONDS}`,
     ].join('; '),
   )
+}
+
+export function setSessionCookie(token: string) {
+  setSessionJarCookie({ activeToken: token, tokens: [token] })
 }
 
 export function clearSessionCookie() {
@@ -112,13 +224,29 @@ export async function issueSession(userId: string) {
     userAgent: getRequestHeader('user-agent') ?? null,
   })
 
-  setSessionCookie(token)
+  await addSessionTokenToBrowser(token, userId)
 
   return token
 }
 
+async function addSessionTokenToBrowser(token: string, userId: string) {
+  const existingJar = readSessionJar()
+  const existingSessions = existingJar
+    ? await resolveSessionTokens(existingJar.tokens)
+    : []
+  const existingTokens = existingSessions
+    .filter((session) => session.user.id !== userId)
+    .map((session) => session.token)
+
+  setSessionJarCookie({
+    activeToken: token,
+    tokens: [...existingTokens, token],
+  })
+}
+
 export async function revokeCurrentSession() {
-  const token = readSessionToken()
+  const sessionJar = readSessionJar()
+  const token = sessionJar?.activeToken ?? null
 
   if (!token) {
     clearSessionCookie()
@@ -135,7 +263,20 @@ export async function revokeCurrentSession() {
       ),
     )
 
-  clearSessionCookie()
+  const remainingTokens =
+    sessionJar?.tokens.filter((item) => item !== token) ?? []
+  const remainingSessions = await resolveSessionTokens(remainingTokens)
+  const nextSession = remainingSessions.at(-1)
+
+  if (!nextSession) {
+    clearSessionCookie()
+    return
+  }
+
+  setSessionJarCookie({
+    activeToken: nextSession.token,
+    tokens: remainingSessions.map((session) => session.token),
+  })
 }
 
 export async function revokeUserSessions(userId: string) {
@@ -145,13 +286,10 @@ export async function revokeUserSessions(userId: string) {
     .where(and(eq(authSessions.userId, userId), isNull(authSessions.revokedAt)))
 }
 
-export async function getCurrentSession(): Promise<CurrentSession | null> {
-  const token = readSessionToken()
-
-  if (!token) {
-    return null
-  }
-
+async function getSessionFromToken(
+  token: string,
+  updateLastSeen = false,
+): Promise<ResolvedSession | null> {
   const tokenHash = hashSessionToken(token)
 
   const sessionRows = await db
@@ -178,14 +316,15 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
     (typeof sessionRows)[number] | undefined
 
   if (!sessionRecord) {
-    clearSessionCookie()
     return null
   }
 
-  await db
-    .update(authSessions)
-    .set({ lastSeenAt: new Date() })
-    .where(eq(authSessions.id, sessionRecord.sessionId))
+  if (updateLastSeen) {
+    await db
+      .update(authSessions)
+      .set({ lastSeenAt: new Date() })
+      .where(eq(authSessions.id, sessionRecord.sessionId))
+  }
 
   const roles = await db
     .select({
@@ -197,6 +336,7 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
     .where(eq(userRoles.userId, sessionRecord.userId))
 
   return {
+    token,
     sessionId: sessionRecord.sessionId,
     expiresAt: sessionRecord.expiresAt,
     user: {
@@ -207,4 +347,110 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
       roles,
     },
   }
+}
+
+async function resolveSessionTokens(tokens: string[]) {
+  const resolvedSessions = await Promise.all(
+    tokens.map((token) => getSessionFromToken(token)),
+  )
+
+  return resolvedSessions.filter(
+    (session): session is ResolvedSession => session !== null,
+  )
+}
+
+export async function getCurrentSession(): Promise<CurrentSession | null> {
+  const sessionJar = readSessionJar()
+  const token = sessionJar?.activeToken ?? null
+
+  if (!token) {
+    return null
+  }
+
+  const currentSession = await getSessionFromToken(token, true)
+
+  if (currentSession) {
+    return currentSession
+  }
+
+  const fallbackSessions = await resolveSessionTokens(
+    sessionJar?.tokens.filter((item) => item !== token) ?? [],
+  )
+  const fallbackSession = fallbackSessions.at(-1)
+
+  if (!fallbackSession) {
+    clearSessionCookie()
+    return null
+  }
+
+  setSessionJarCookie({
+    activeToken: fallbackSession.token,
+    tokens: fallbackSessions.map((session) => session.token),
+  })
+
+  return fallbackSession
+}
+
+export async function getSessionAccounts(activeSessionId?: string) {
+  const sessionJar = readSessionJar()
+
+  if (!sessionJar) {
+    return [] satisfies SessionAccount[]
+  }
+
+  const sessions = await resolveSessionTokens(sessionJar.tokens)
+
+  if (sessions.length === 0) {
+    clearSessionCookie()
+    return [] satisfies SessionAccount[]
+  }
+
+  const activeSession =
+    sessions.find((session) => session.sessionId === activeSessionId) ??
+    sessions.find((session) => session.token === sessionJar.activeToken) ??
+    sessions.at(-1)
+
+  if (!activeSession) {
+    clearSessionCookie()
+    return [] satisfies SessionAccount[]
+  }
+
+  setSessionJarCookie({
+    activeToken: activeSession.token,
+    tokens: sessions.map((session) => session.token),
+  })
+
+  return sessions.map(({ token: _token, ...session }) => ({
+    ...session,
+    isCurrent: session.sessionId === activeSession.sessionId,
+  }))
+}
+
+export async function switchCurrentSession(sessionId: string) {
+  const sessionJar = readSessionJar()
+
+  if (!sessionJar) {
+    throw new Error('Unauthorized')
+  }
+
+  const sessions = await resolveSessionTokens(sessionJar.tokens)
+  const targetSession = sessions.find(
+    (session) => session.sessionId === sessionId,
+  )
+
+  if (!targetSession) {
+    throw new Error('Account session not found')
+  }
+
+  await db
+    .update(authSessions)
+    .set({ lastSeenAt: new Date() })
+    .where(eq(authSessions.id, targetSession.sessionId))
+
+  setSessionJarCookie({
+    activeToken: targetSession.token,
+    tokens: sessions.map((session) => session.token),
+  })
+
+  return targetSession
 }

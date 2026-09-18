@@ -18,6 +18,7 @@ import {
   requireAnyRole,
   requireCurrentSession,
 } from '#/lib/permissions.server.ts'
+import { getSessionAccounts } from '#/lib/session.server.ts'
 import { slugify, splitKeywords } from '#/lib/slug.ts'
 
 import type { SessionUser } from '#/lib/session.server.ts'
@@ -100,7 +101,8 @@ export const getWorkspaceSnapshot = createServerFn({ method: 'GET' }).handler(
   async () => {
     requireServerEnv()
 
-    const { user } = await requireCurrentSession()
+    const currentSession = await requireCurrentSession()
+    const { user } = currentSession
 
     const [
       facultyRows,
@@ -174,6 +176,7 @@ export const getWorkspaceSnapshot = createServerFn({ method: 'GET' }).handler(
 
     return {
       currentUser: user,
+      accounts: await getSessionAccounts(currentSession.sessionId),
       canManageOrganization: hasRole(user, ['super_admin']),
       faculties: facultyRows,
       departments: departmentRows,
