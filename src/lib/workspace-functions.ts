@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -95,6 +95,14 @@ const createPatentDraftSchema = z.object({
   industryPartner: optionalTextSchema,
 })
 
+const publicationDetailSchema = z.object({
+  publicationId: z.string().uuid(),
+})
+
+const patentDetailSchema = z.object({
+  patentId: z.string().uuid(),
+})
+
 export const getWorkspaceSnapshot = createServerFn({ method: 'GET' }).handler(
   async () => {
     requireServerEnv()
@@ -151,6 +159,14 @@ export const getWorkspaceSnapshot = createServerFn({ method: 'GET' }).handler(
           slug: publications.slug,
           status: publications.status,
           publicationType: publications.publicationType,
+          abstract: publications.abstract,
+          summary: publications.summary,
+          researchCategory: publications.researchCategory,
+          keywords: publications.keywords,
+          publicationYear: publications.publicationYear,
+          venueName: publications.venueName,
+          doi: publications.doi,
+          sourceUrl: publications.sourceUrl,
           createdAt: publications.createdAt,
         })
         .from(publications)
@@ -164,6 +180,13 @@ export const getWorkspaceSnapshot = createServerFn({ method: 'GET' }).handler(
           slug: patents.slug,
           status: patents.status,
           patentStatus: patents.patentStatus,
+          abstract: patents.abstract,
+          summary: patents.summary,
+          patentNumber: patents.patentNumber,
+          applicationNumber: patents.applicationNumber,
+          jurisdiction: patents.jurisdiction,
+          commercializationStatus: patents.commercializationStatus,
+          industryPartner: patents.industryPartner,
           createdAt: patents.createdAt,
         })
         .from(patents)
@@ -333,6 +356,109 @@ export const createPatentDraft = createServerFn({ method: 'POST' })
       .returning({ id: patents.id, title: patents.title })
 
     return { ok: true, patent }
+  })
+
+export const getPublicationDetail = createServerFn({ method: 'GET' })
+  .validator(publicationDetailSchema)
+  .handler(async ({ data }) => {
+    requireServerEnv()
+
+    const { user } = await requireCurrentSession()
+    const publicationRows = await db
+      .select({
+        id: publications.id,
+        title: publications.title,
+        slug: publications.slug,
+        abstract: publications.abstract,
+        summary: publications.summary,
+        publicationType: publications.publicationType,
+        researchCategory: publications.researchCategory,
+        keywords: publications.keywords,
+        publicationYear: publications.publicationYear,
+        venueName: publications.venueName,
+        doi: publications.doi,
+        sourceUrl: publications.sourceUrl,
+        documentUrl: publications.documentUrl,
+        fundingInformation: publications.fundingInformation,
+        collaborationDetails: publications.collaborationDetails,
+        status: publications.status,
+        publishedAt: publications.publishedAt,
+        createdAt: publications.createdAt,
+        updatedAt: publications.updatedAt,
+        owningProfileName: profiles.displayName,
+        facultyName: faculties.name,
+        departmentName: departments.name,
+      })
+      .from(publications)
+      .leftJoin(profiles, eq(publications.owningProfileId, profiles.id))
+      .leftJoin(faculties, eq(publications.facultyId, faculties.id))
+      .leftJoin(departments, eq(publications.departmentId, departments.id))
+      .where(
+        and(
+          eq(publications.id, data.publicationId),
+          eq(publications.createdByUserId, user.id),
+        ),
+      )
+      .limit(1)
+    const publication = publicationRows[0] as
+      (typeof publicationRows)[number] | undefined
+
+    if (!publication) {
+      throw new Error('Publication not found')
+    }
+
+    return publication
+  })
+
+export const getPatentDetail = createServerFn({ method: 'GET' })
+  .validator(patentDetailSchema)
+  .handler(async ({ data }) => {
+    requireServerEnv()
+
+    const { user } = await requireCurrentSession()
+    const patentRows = await db
+      .select({
+        id: patents.id,
+        title: patents.title,
+        slug: patents.slug,
+        abstract: patents.abstract,
+        summary: patents.summary,
+        patentNumber: patents.patentNumber,
+        applicationNumber: patents.applicationNumber,
+        filingDate: patents.filingDate,
+        grantDate: patents.grantDate,
+        jurisdiction: patents.jurisdiction,
+        patentStatus: patents.patentStatus,
+        sourceUrl: patents.sourceUrl,
+        documentUrl: patents.documentUrl,
+        commercializationStatus: patents.commercializationStatus,
+        industryPartner: patents.industryPartner,
+        status: patents.status,
+        publishedAt: patents.publishedAt,
+        createdAt: patents.createdAt,
+        updatedAt: patents.updatedAt,
+        owningProfileName: profiles.displayName,
+        facultyName: faculties.name,
+        departmentName: departments.name,
+      })
+      .from(patents)
+      .leftJoin(profiles, eq(patents.owningProfileId, profiles.id))
+      .leftJoin(faculties, eq(patents.facultyId, faculties.id))
+      .leftJoin(departments, eq(patents.departmentId, departments.id))
+      .where(
+        and(
+          eq(patents.id, data.patentId),
+          eq(patents.createdByUserId, user.id),
+        ),
+      )
+      .limit(1)
+    const patent = patentRows[0] as (typeof patentRows)[number] | undefined
+
+    if (!patent) {
+      throw new Error('Patent not found')
+    }
+
+    return patent
   })
 
 async function requireOwnedPrimaryProfile(user: SessionUser) {

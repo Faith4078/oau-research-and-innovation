@@ -10,10 +10,9 @@ import {
 
 type Workspace = ReturnType<typeof useWorkspace>
 type WorkspaceProfile = Workspace['myProfiles'][number]
+type WorkspacePatent = Workspace['recentPatents'][number]
+type WorkspacePublication = Workspace['recentPublications'][number]
 type WorkspaceRole = Workspace['currentUser']['roles'][number]
-type WorkspaceRecord =
-  Workspace['recentPublications'][number] | Workspace['recentPatents'][number]
-type RecordCreatePath = '/app/publications/create' | '/app/patents/create'
 
 export const Route = createFileRoute('/app/')({ component: AppDashboard })
 
@@ -67,25 +66,9 @@ function AppDashboard() {
         </section>
       )}
 
-      <section className="mt-10 grid gap-5 lg:grid-cols-2">
-        <RecordDashboardCard
-          title="Your publications"
-          description="Drafts and submitted publication records linked to your account."
-          records={workspace.recentPublications}
-          createPath="/app/publications/create"
-          createLabel="Create publication"
-          emptyMessage="You do not have any publication records yet."
-          missingProfileHint="You will be redirected to create a profile first."
-        />
-        <RecordDashboardCard
-          title="Your patents"
-          description="Patent and invention disclosure drafts linked to your account."
-          records={workspace.recentPatents}
-          createPath="/app/patents/create"
-          createLabel="Create patent"
-          emptyMessage="You do not have any patent records yet."
-          missingProfileHint="You will be redirected to create a profile first."
-        />
+      <section className="mt-10 grid gap-5">
+        <PublicationDashboardCard records={workspace.recentPublications} />
+        <PatentDashboardCard records={workspace.recentPatents} />
       </section>
 
       {workspace.canManageOrganization ? (
@@ -238,57 +221,247 @@ function getRoleBannerText(roleRecord: WorkspaceRole, workspace: Workspace) {
   }
 }
 
-function RecordDashboardCard({
-  title,
-  description,
+function PublicationDashboardCard({
   records,
-  createPath,
-  createLabel,
-  emptyMessage,
-  missingProfileHint,
 }: {
-  title: string
-  description: string
-  records: WorkspaceRecord[]
-  createPath: RecordCreatePath
-  createLabel: string
-  emptyMessage: string
-  missingProfileHint: string
+  records: WorkspacePublication[]
 }) {
   const workspace = useWorkspace()
   const hasProfile = workspace.myProfiles.length > 0
 
   return (
     <article className="card-panel bg-white! p-6!">
-      <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
-      <p className="mt-3 text-sm leading-6 text-muted">{description}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Your publications
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-muted">
+            Drafts and submitted publication records linked to your account.
+          </p>
+        </div>
+        <Link to="/app/publications" className="button-secondary">
+          View all publications
+        </Link>
+      </div>
 
-      <div className="mt-5 grid gap-3">
+      <div className="mt-5 grid gap-4">
         {records.length > 0 ? (
-          records.map((record) => (
-            <div
-              key={record.id}
-              className="flex items-center justify-between gap-4 rounded-sm bg-surface p-3 text-sm"
-            >
-              <span className="font-medium">{record.title}</span>
-              <span className="chip">{record.status.replaceAll('_', ' ')}</span>
-            </div>
-          ))
+          records.map((publication) => {
+            const keywords = publication.keywords ?? []
+            const description = publication.summary ?? publication.abstract
+
+            return (
+              <Link
+                key={publication.id}
+                to="/app/publications/$publicationId"
+                params={{ publicationId: publication.id }}
+                className="block rounded-md border border-border bg-surface p-5 transition hover:border-primary/30 hover:bg-primary/5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold tracking-tight">
+                      {publication.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-muted">
+                      {publication.publicationType.replaceAll('_', ' ')}
+                    </p>
+                  </div>
+                  <span className="chip">
+                    {publication.status.replaceAll('_', ' ')}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-3">
+                  <RecordFact
+                    label="Venue"
+                    value={publication.venueName ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Publication year"
+                    value={publication.publicationYear ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Research category"
+                    value={publication.researchCategory ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Created"
+                    value={formatDate(publication.createdAt)}
+                  />
+                </div>
+
+                {description ? (
+                  <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted">
+                    {description}
+                  </p>
+                ) : null}
+
+                {keywords.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {keywords.slice(0, 5).map((keyword) => (
+                      <span key={keyword} className="chip">
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </Link>
+            )
+          })
         ) : (
-          <div className="rounded-sm border border-border bg-surface p-4">
-            <p className="text-sm leading-6 text-muted">{emptyMessage}</p>
-            {!hasProfile ? (
-              <p className="mt-2 text-xs font-medium text-muted">
-                {missingProfileHint}
-              </p>
-            ) : null}
-            <Link to={createPath} className="button-primary mt-4">
-              {createLabel}
-            </Link>
-          </div>
+          <EmptyRecordState
+            createPath="/app/publications/create"
+            createLabel="Create publication"
+            emptyMessage="You do not have any publication records yet."
+            missingProfileHint="You will be redirected to create a profile first."
+            showMissingProfileHint={!hasProfile}
+          />
         )}
       </div>
     </article>
+  )
+}
+
+function PatentDashboardCard({ records }: { records: WorkspacePatent[] }) {
+  const workspace = useWorkspace()
+  const hasProfile = workspace.myProfiles.length > 0
+
+  return (
+    <article className="card-panel bg-white! p-6!">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Your patents
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-muted">
+            Patent and invention disclosure drafts linked to your account.
+          </p>
+        </div>
+        <Link to="/app/patents" className="button-secondary">
+          View all patents
+        </Link>
+      </div>
+
+      <div className="mt-5 grid gap-4">
+        {records.length > 0 ? (
+          records.map((patent) => {
+            const description = patent.summary ?? patent.abstract
+
+            return (
+              <Link
+                key={patent.id}
+                to="/app/patents/$patentId"
+                params={{ patentId: patent.id }}
+                className="block rounded-md border border-border bg-surface p-5 transition hover:border-primary/30 hover:bg-primary/5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold tracking-tight">
+                      {patent.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-muted">
+                      {patent.patentStatus.replaceAll('_', ' ')}
+                    </p>
+                  </div>
+                  <span className="chip">
+                    {patent.status.replaceAll('_', ' ')}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-3">
+                  <RecordFact
+                    label="Patent number"
+                    value={patent.patentNumber ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Application number"
+                    value={patent.applicationNumber ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Jurisdiction"
+                    value={patent.jurisdiction ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Commercialization"
+                    value={patent.commercializationStatus ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Industry partner"
+                    value={patent.industryPartner ?? 'Not provided'}
+                  />
+                  <RecordFact
+                    label="Created"
+                    value={formatDate(patent.createdAt)}
+                  />
+                </div>
+
+                {description ? (
+                  <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted">
+                    {description}
+                  </p>
+                ) : null}
+
+                <span className="mt-4 inline-flex text-sm font-semibold text-primary">
+                  View patent details
+                </span>
+              </Link>
+            )
+          })
+        ) : (
+          <EmptyRecordState
+            createPath="/app/patents/create"
+            createLabel="Create patent"
+            emptyMessage="You do not have any patent records yet."
+            missingProfileHint="You will be redirected to create a profile first."
+            showMissingProfileHint={!hasProfile}
+          />
+        )}
+      </div>
+    </article>
+  )
+}
+
+function EmptyRecordState({
+  createPath,
+  createLabel,
+  emptyMessage,
+  missingProfileHint,
+  showMissingProfileHint,
+}: {
+  createPath: '/app/publications/create' | '/app/patents/create'
+  createLabel: string
+  emptyMessage: string
+  missingProfileHint: string
+  showMissingProfileHint: boolean
+}) {
+  return (
+    <div className="rounded-sm border border-border bg-surface p-4">
+      <p className="text-sm leading-6 text-muted">{emptyMessage}</p>
+      {showMissingProfileHint ? (
+        <p className="mt-2 text-xs font-medium text-muted">
+          {missingProfileHint}
+        </p>
+      ) : null}
+      <Link to={createPath} className="button-primary mt-4">
+        {createLabel}
+      </Link>
+    </div>
+  )
+}
+
+function RecordFact({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="rounded-sm bg-white px-3 py-2 text-sm">
+      <span className="label-sm text-muted">{label}</span>
+      <span className="mt-1 block font-medium text-foreground">{value}</span>
+    </div>
+  )
+}
+
+function formatDate(value: Date | string) {
+  return new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(
+    new Date(value),
   )
 }
 

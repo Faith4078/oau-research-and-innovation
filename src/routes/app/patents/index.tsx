@@ -39,8 +39,10 @@ function MyPatentsPage() {
         <div className="mt-6 grid gap-3">
           {workspace.recentPatents.length > 0 ? (
             workspace.recentPatents.map((patent) => (
-              <article
+              <Link
                 key={patent.id}
+                to="/app/patents/$patentId"
+                params={{ patentId: patent.id }}
                 className="rounded-md border border-border bg-surface p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -56,7 +58,24 @@ function MyPatentsPage() {
                     {patent.status.replaceAll('_', ' ')}
                   </span>
                 </div>
-              </article>
+                <div className="mt-4 grid gap-2 text-sm text-muted">
+                  <p>Patent number: {patent.patentNumber ?? 'Not provided'}</p>
+                  <p>
+                    Application number:{' '}
+                    {patent.applicationNumber ?? 'Not provided'}
+                  </p>
+                  <p>Jurisdiction: {patent.jurisdiction ?? 'Not provided'}</p>
+                  <p>
+                    Commercialization:{' '}
+                    {patent.commercializationStatus ?? 'Not provided'}
+                  </p>
+                </div>
+                {(patent.summary ?? patent.abstract) ? (
+                  <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted">
+                    {patent.summary ?? patent.abstract}
+                  </p>
+                ) : null}
+              </Link>
             ))
           ) : (
             <div className="rounded-sm border border-border bg-surface p-4">

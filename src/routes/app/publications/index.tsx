@@ -39,8 +39,10 @@ function MyPublicationsPage() {
         <div className="mt-6 grid gap-3">
           {workspace.recentPublications.length > 0 ? (
             workspace.recentPublications.map((publication) => (
-              <article
+              <Link
                 key={publication.id}
+                to="/app/publications/$publicationId"
+                params={{ publicationId: publication.id }}
                 className="rounded-md border border-border bg-surface p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -56,7 +58,19 @@ function MyPublicationsPage() {
                     {publication.status.replaceAll('_', ' ')}
                   </span>
                 </div>
-              </article>
+                <div className="mt-4 grid gap-2 text-sm text-muted">
+                  <p>Venue: {publication.venueName ?? 'Not provided'}</p>
+                  <p>Year: {publication.publicationYear ?? 'Not provided'}</p>
+                  <p>
+                    Category: {publication.researchCategory ?? 'Not provided'}
+                  </p>
+                </div>
+                {(publication.summary ?? publication.abstract) ? (
+                  <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted">
+                    {publication.summary ?? publication.abstract}
+                  </p>
+                ) : null}
+              </Link>
             ))
           ) : (
             <div className="rounded-sm border border-border bg-surface p-4">
