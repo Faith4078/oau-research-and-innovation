@@ -9,6 +9,8 @@ import {
 import { db } from '#/db/index.ts'
 import { authSessions, authUsers, userRoles } from '#/db/schema.ts'
 
+import type { UserRole } from '#/db/schema.ts'
+
 export const SESSION_COOKIE_NAME = '__Host-oau-ri-session'
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
 
@@ -18,7 +20,7 @@ export type SessionUser = {
   universityEmail: string | null
   staffIdentifier: string | null
   roles: Array<{
-    role: string
+    role: UserRole
     facultyId: string | null
     departmentId: string | null
   }>

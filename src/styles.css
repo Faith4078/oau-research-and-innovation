@@ -289,11 +289,41 @@ code {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
+.textarea-field {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  color: var(--foreground);
+  min-height: 96px;
+  outline: none;
+  padding: 16px;
+  resize: vertical;
+}
+
+.textarea-field::placeholder {
+  color: color-mix(in oklab, var(--muted) 74%, white);
+}
+
+.textarea-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
+}
+
 .error-copy {
   border: 1px solid color-mix(in oklab, var(--error) 30%, white);
   border-radius: var(--radius-sm);
   background: color-mix(in oklab, var(--error) 8%, white);
   color: var(--error);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+
+.success-copy {
+  border: 1px solid color-mix(in oklab, var(--primary) 26%, white);
+  border-radius: var(--radius-sm);
+  background: var(--tint);
+  color: var(--primary);
   font-size: 0.875rem;
   line-height: 1.5;
   padding: 12px 14px;

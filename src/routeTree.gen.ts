@@ -11,8 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
+import { Route as AppDepartmentsCreateRouteImport } from './routes/app/departments/create'
+import { Route as AppFacultiesCreateRouteImport } from './routes/app/faculties/create'
+import { Route as AppPatentsIndexRouteImport } from './routes/app/patents/index'
+import { Route as AppPatentsCreateRouteImport } from './routes/app/patents/create'
+import { Route as AppProfileCreateRouteImport } from './routes/app/profile/create'
+import { Route as AppPublicationsIndexRouteImport } from './routes/app/publications/index'
+import { Route as AppPublicationsCreateRouteImport } from './routes/app/publications/create'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,6 +32,11 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/auth/sign-in',
   path: '/auth/sign-in',
@@ -34,37 +47,131 @@ const AuthSignUpRoute = AuthSignUpRouteImport.update({
   path: '/auth/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppDepartmentsCreateRoute = AppDepartmentsCreateRouteImport.update({
+  id: '/departments/create',
+  path: '/departments/create',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFacultiesCreateRoute = AppFacultiesCreateRouteImport.update({
+  id: '/faculties/create',
+  path: '/faculties/create',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPatentsIndexRoute = AppPatentsIndexRouteImport.update({
+  id: '/patents/',
+  path: '/patents/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPatentsCreateRoute = AppPatentsCreateRouteImport.update({
+  id: '/patents/create',
+  path: '/patents/create',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileCreateRoute = AppProfileCreateRouteImport.update({
+  id: '/profile/create',
+  path: '/profile/create',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPublicationsIndexRoute = AppPublicationsIndexRouteImport.update({
+  id: '/publications/',
+  path: '/publications/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPublicationsCreateRoute = AppPublicationsCreateRouteImport.update({
+  id: '/publications/create',
+  path: '/publications/create',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/app/': typeof AppIndexRoute
+  '/app/departments/create': typeof AppDepartmentsCreateRoute
+  '/app/faculties/create': typeof AppFacultiesCreateRoute
+  '/app/patents/create': typeof AppPatentsCreateRoute
+  '/app/profile/create': typeof AppProfileCreateRoute
+  '/app/publications/create': typeof AppPublicationsCreateRoute
+  '/app/patents/': typeof AppPatentsIndexRoute
+  '/app/publications/': typeof AppPublicationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/app': typeof AppIndexRoute
+  '/app/departments/create': typeof AppDepartmentsCreateRoute
+  '/app/faculties/create': typeof AppFacultiesCreateRoute
+  '/app/patents/create': typeof AppPatentsCreateRoute
+  '/app/profile/create': typeof AppProfileCreateRoute
+  '/app/publications/create': typeof AppPublicationsCreateRoute
+  '/app/patents': typeof AppPatentsIndexRoute
+  '/app/publications': typeof AppPublicationsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/app/': typeof AppIndexRoute
+  '/app/departments/create': typeof AppDepartmentsCreateRoute
+  '/app/faculties/create': typeof AppFacultiesCreateRoute
+  '/app/patents/create': typeof AppPatentsCreateRoute
+  '/app/profile/create': typeof AppProfileCreateRoute
+  '/app/publications/create': typeof AppPublicationsCreateRoute
+  '/app/patents/': typeof AppPatentsIndexRoute
+  '/app/publications/': typeof AppPublicationsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth/sign-in' | '/auth/sign-up'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/app/'
+    | '/app/departments/create'
+    | '/app/faculties/create'
+    | '/app/patents/create'
+    | '/app/profile/create'
+    | '/app/publications/create'
+    | '/app/patents/'
+    | '/app/publications/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/auth/sign-in' | '/auth/sign-up'
-  id: '__root__' | '/' | '/app' | '/auth/sign-in' | '/auth/sign-up'
+  to:
+    | '/'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/app'
+    | '/app/departments/create'
+    | '/app/faculties/create'
+    | '/app/patents/create'
+    | '/app/profile/create'
+    | '/app/publications/create'
+    | '/app/patents'
+    | '/app/publications'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/app/'
+    | '/app/departments/create'
+    | '/app/faculties/create'
+    | '/app/patents/create'
+    | '/app/profile/create'
+    | '/app/publications/create'
+    | '/app/patents/'
+    | '/app/publications/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
 }
@@ -85,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/auth/sign-in': {
       id: '/auth/sign-in'
       path: '/auth/sign-in'
@@ -99,12 +213,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/departments/create': {
+      id: '/app/departments/create'
+      path: '/departments/create'
+      fullPath: '/app/departments/create'
+      preLoaderRoute: typeof AppDepartmentsCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/faculties/create': {
+      id: '/app/faculties/create'
+      path: '/faculties/create'
+      fullPath: '/app/faculties/create'
+      preLoaderRoute: typeof AppFacultiesCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/patents/': {
+      id: '/app/patents/'
+      path: '/patents'
+      fullPath: '/app/patents/'
+      preLoaderRoute: typeof AppPatentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/patents/create': {
+      id: '/app/patents/create'
+      path: '/patents/create'
+      fullPath: '/app/patents/create'
+      preLoaderRoute: typeof AppPatentsCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/profile/create': {
+      id: '/app/profile/create'
+      path: '/profile/create'
+      fullPath: '/app/profile/create'
+      preLoaderRoute: typeof AppProfileCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/publications/': {
+      id: '/app/publications/'
+      path: '/publications'
+      fullPath: '/app/publications/'
+      preLoaderRoute: typeof AppPublicationsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/publications/create': {
+      id: '/app/publications/create'
+      path: '/publications/create'
+      fullPath: '/app/publications/create'
+      preLoaderRoute: typeof AppPublicationsCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+  AppDepartmentsCreateRoute: typeof AppDepartmentsCreateRoute
+  AppFacultiesCreateRoute: typeof AppFacultiesCreateRoute
+  AppPatentsCreateRoute: typeof AppPatentsCreateRoute
+  AppProfileCreateRoute: typeof AppProfileCreateRoute
+  AppPublicationsCreateRoute: typeof AppPublicationsCreateRoute
+  AppPatentsIndexRoute: typeof AppPatentsIndexRoute
+  AppPublicationsIndexRoute: typeof AppPublicationsIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+  AppDepartmentsCreateRoute: AppDepartmentsCreateRoute,
+  AppFacultiesCreateRoute: AppFacultiesCreateRoute,
+  AppPatentsCreateRoute: AppPatentsCreateRoute,
+  AppProfileCreateRoute: AppProfileCreateRoute,
+  AppPublicationsCreateRoute: AppPublicationsCreateRoute,
+  AppPatentsIndexRoute: AppPatentsIndexRoute,
+  AppPublicationsIndexRoute: AppPublicationsIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
 }
