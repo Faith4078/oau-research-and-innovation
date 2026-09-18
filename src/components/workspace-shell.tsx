@@ -74,11 +74,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
               <Link to="/app" className="hover:text-primary">
                 Home
               </Link>
-              <Link
-                to="/app/profile/create"
-                search={{ reason: undefined }}
-                className="hover:text-primary"
-              >
+              <Link to="/app/profile" className="hover:text-primary">
                 Profile
               </Link>
               <Link to="/app/publications" className="hover:text-primary">

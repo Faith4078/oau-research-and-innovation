@@ -29,7 +29,7 @@ export async function requireRecordCreatePage() {
 
   if (workspace.myProfiles.length === 0) {
     throw redirect({
-      to: '/app/profile/create',
+      to: '/app/profile/edit',
       search: { reason: 'missing-profile' },
     })
   }

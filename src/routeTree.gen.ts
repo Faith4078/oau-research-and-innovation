@@ -18,7 +18,9 @@ import { Route as AppDepartmentsCreateRouteImport } from './routes/app/departmen
 import { Route as AppFacultiesCreateRouteImport } from './routes/app/faculties/create'
 import { Route as AppPatentsIndexRouteImport } from './routes/app/patents/index'
 import { Route as AppPatentsCreateRouteImport } from './routes/app/patents/create'
+import { Route as AppProfileIndexRouteImport } from './routes/app/profile/index'
 import { Route as AppProfileCreateRouteImport } from './routes/app/profile/create'
+import { Route as AppProfileEditRouteImport } from './routes/app/profile/edit'
 import { Route as AppPublicationsIndexRouteImport } from './routes/app/publications/index'
 import { Route as AppPublicationsCreateRouteImport } from './routes/app/publications/create'
 
@@ -67,9 +69,19 @@ const AppPatentsCreateRoute = AppPatentsCreateRouteImport.update({
   path: '/patents/create',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfileIndexRoute = AppProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfileCreateRoute = AppProfileCreateRouteImport.update({
   id: '/profile/create',
   path: '/profile/create',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileEditRoute = AppProfileEditRouteImport.update({
+  id: '/profile/edit',
+  path: '/profile/edit',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPublicationsIndexRoute = AppPublicationsIndexRouteImport.update({
@@ -93,8 +105,10 @@ export interface FileRoutesByFullPath {
   '/app/faculties/create': typeof AppFacultiesCreateRoute
   '/app/patents/create': typeof AppPatentsCreateRoute
   '/app/profile/create': typeof AppProfileCreateRoute
+  '/app/profile/edit': typeof AppProfileEditRoute
   '/app/publications/create': typeof AppPublicationsCreateRoute
   '/app/patents/': typeof AppPatentsIndexRoute
+  '/app/profile/': typeof AppProfileIndexRoute
   '/app/publications/': typeof AppPublicationsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -106,8 +120,10 @@ export interface FileRoutesByTo {
   '/app/faculties/create': typeof AppFacultiesCreateRoute
   '/app/patents/create': typeof AppPatentsCreateRoute
   '/app/profile/create': typeof AppProfileCreateRoute
+  '/app/profile/edit': typeof AppProfileEditRoute
   '/app/publications/create': typeof AppPublicationsCreateRoute
   '/app/patents': typeof AppPatentsIndexRoute
+  '/app/profile': typeof AppProfileIndexRoute
   '/app/publications': typeof AppPublicationsIndexRoute
 }
 export interface FileRoutesById {
@@ -121,8 +137,10 @@ export interface FileRoutesById {
   '/app/faculties/create': typeof AppFacultiesCreateRoute
   '/app/patents/create': typeof AppPatentsCreateRoute
   '/app/profile/create': typeof AppProfileCreateRoute
+  '/app/profile/edit': typeof AppProfileEditRoute
   '/app/publications/create': typeof AppPublicationsCreateRoute
   '/app/patents/': typeof AppPatentsIndexRoute
+  '/app/profile/': typeof AppProfileIndexRoute
   '/app/publications/': typeof AppPublicationsIndexRoute
 }
 export interface FileRouteTypes {
@@ -137,8 +155,10 @@ export interface FileRouteTypes {
     | '/app/faculties/create'
     | '/app/patents/create'
     | '/app/profile/create'
+    | '/app/profile/edit'
     | '/app/publications/create'
     | '/app/patents/'
+    | '/app/profile/'
     | '/app/publications/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -150,8 +170,10 @@ export interface FileRouteTypes {
     | '/app/faculties/create'
     | '/app/patents/create'
     | '/app/profile/create'
+    | '/app/profile/edit'
     | '/app/publications/create'
     | '/app/patents'
+    | '/app/profile'
     | '/app/publications'
   id:
     | '__root__'
@@ -164,8 +186,10 @@ export interface FileRouteTypes {
     | '/app/faculties/create'
     | '/app/patents/create'
     | '/app/profile/create'
+    | '/app/profile/edit'
     | '/app/publications/create'
     | '/app/patents/'
+    | '/app/profile/'
     | '/app/publications/'
   fileRoutesById: FileRoutesById
 }
@@ -241,11 +265,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPatentsCreateRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/profile/': {
+      id: '/app/profile/'
+      path: '/profile'
+      fullPath: '/app/profile/'
+      preLoaderRoute: typeof AppProfileIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/profile/create': {
       id: '/app/profile/create'
       path: '/profile/create'
       fullPath: '/app/profile/create'
       preLoaderRoute: typeof AppProfileCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/profile/edit': {
+      id: '/app/profile/edit'
+      path: '/profile/edit'
+      fullPath: '/app/profile/edit'
+      preLoaderRoute: typeof AppProfileEditRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/publications/': {
@@ -271,8 +309,10 @@ interface AppRouteChildren {
   AppFacultiesCreateRoute: typeof AppFacultiesCreateRoute
   AppPatentsCreateRoute: typeof AppPatentsCreateRoute
   AppProfileCreateRoute: typeof AppProfileCreateRoute
+  AppProfileEditRoute: typeof AppProfileEditRoute
   AppPublicationsCreateRoute: typeof AppPublicationsCreateRoute
   AppPatentsIndexRoute: typeof AppPatentsIndexRoute
+  AppProfileIndexRoute: typeof AppProfileIndexRoute
   AppPublicationsIndexRoute: typeof AppPublicationsIndexRoute
 }
 
@@ -282,8 +322,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppFacultiesCreateRoute: AppFacultiesCreateRoute,
   AppPatentsCreateRoute: AppPatentsCreateRoute,
   AppProfileCreateRoute: AppProfileCreateRoute,
+  AppProfileEditRoute: AppProfileEditRoute,
   AppPublicationsCreateRoute: AppPublicationsCreateRoute,
   AppPatentsIndexRoute: AppPatentsIndexRoute,
+  AppProfileIndexRoute: AppProfileIndexRoute,
   AppPublicationsIndexRoute: AppPublicationsIndexRoute,
 }
 

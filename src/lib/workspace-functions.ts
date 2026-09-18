@@ -71,7 +71,6 @@ const upsertProfileSchema = z.object({
 })
 
 const createPublicationDraftSchema = z.object({
-  owningProfileId: z.string().uuid(),
   title: z.string().trim().min(4).max(500),
   abstract: optionalTextSchema,
   summary: optionalTextSchema,
@@ -85,7 +84,6 @@ const createPublicationDraftSchema = z.object({
 })
 
 const createPatentDraftSchema = z.object({
-  owningProfileId: z.string().uuid(),
   title: z.string().trim().min(4).max(500),
   abstract: optionalTextSchema,
   summary: optionalTextSchema,
@@ -280,10 +278,7 @@ export const createPublicationDraft = createServerFn({ method: 'POST' })
     requireServerEnv()
 
     const { user } = await requireCurrentSession()
-    const owningProfile = await requireWritableProfile(
-      data.owningProfileId,
-      user,
-    )
+    const owningProfile = await requireOwnedPrimaryProfile(user)
 
     const [publication] = await db
       .insert(publications)
@@ -315,10 +310,7 @@ export const createPatentDraft = createServerFn({ method: 'POST' })
     requireServerEnv()
 
     const { user } = await requireCurrentSession()
-    const owningProfile = await requireWritableProfile(
-      data.owningProfileId,
-      user,
-    )
+    const owningProfile = await requireOwnedPrimaryProfile(user)
 
     const [patent] = await db
       .insert(patents)
@@ -343,25 +335,21 @@ export const createPatentDraft = createServerFn({ method: 'POST' })
     return { ok: true, patent }
   })
 
-async function requireWritableProfile(profileId: string, user: SessionUser) {
+async function requireOwnedPrimaryProfile(user: SessionUser) {
   const profileRows = await db
     .select({
       id: profiles.id,
-      userId: profiles.userId,
       facultyId: profiles.facultyId,
       departmentId: profiles.departmentId,
     })
     .from(profiles)
-    .where(eq(profiles.id, profileId))
+    .where(eq(profiles.userId, user.id))
+    .orderBy(profiles.displayName)
     .limit(1)
   const profile = profileRows[0] as (typeof profileRows)[number] | undefined
 
   if (!profile) {
-    throw new Error('Profile not found')
-  }
-
-  if (profile.userId !== user.id && !hasRole(user, ['super_admin'])) {
-    throw new Error('You can only create records for your own profile')
+    throw new Error('Create a profile before creating records')
   }
 
   return profile

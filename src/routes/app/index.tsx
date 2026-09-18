@@ -51,11 +51,11 @@ function AppDashboard() {
             Create your attribution profile
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-            Publications and patents are attached to your profile.
-            Create one to add research records.
+            Publications and patents are attached to your profile. Create one to
+            add research records.
           </p>
           <Link
-            to="/app/profile/create"
+            to="/app/profile/edit"
             search={{ reason: 'missing-profile' }}
             className="button-primary mt-6"
           >

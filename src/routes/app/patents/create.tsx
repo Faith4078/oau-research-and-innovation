@@ -5,7 +5,6 @@ import type { FormEvent } from 'react'
 
 import {
   FormStatus,
-  ProfileSelect,
   WorkspacePageHeader,
   formString,
   useWorkspace,
@@ -29,6 +28,7 @@ const patentStatusOptions = [
 
 function CreatePatentPage() {
   const workspace = useWorkspace()
+  const profile = workspace.myProfiles[0]
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -46,7 +46,6 @@ function CreatePatentPage() {
     try {
       await createPatentDraft({
         data: {
-          owningProfileId: formString(formData, 'owningProfileId'),
           title: formString(formData, 'title'),
           abstract: formString(formData, 'abstract'),
           summary: formString(formData, 'summary'),
@@ -86,8 +85,10 @@ function CreatePatentPage() {
       <WorkspacePageHeader
         eyebrow="Patent draft"
         title="Create patent"
-        description="Create a draft patent or invention disclosure from one of your attribution profiles. IPTTO review and commercialization tracking will build on this record."
+        description="Create a draft patent or invention disclosure from your attribution profile. IPTTO review and commercialization tracking will build on this record."
       />
+
+      <ProfileSummaryCard profile={profile} />
 
       <section className="mt-8 max-w-4xl card-panel bg-white! p-6!">
         <FormStatus
@@ -96,11 +97,6 @@ function CreatePatentPage() {
         />
 
         <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
-          <label className="field-label" htmlFor="owningProfileId">
-            Attribution profile
-          </label>
-          <ProfileSelect profiles={workspace.myProfiles} />
-
           <label className="field-label" htmlFor="title">
             Patent title
           </label>
@@ -171,5 +167,35 @@ function CreatePatentPage() {
         </form>
       </section>
     </>
+  )
+}
+
+function ProfileSummaryCard({
+  profile,
+}: {
+  profile: ReturnType<typeof useWorkspace>['myProfiles'][number]
+}) {
+  const researchInterests = profile.researchInterests ?? []
+
+  return (
+    <section className="mt-8 max-w-4xl rounded-md border border-border bg-surface p-4">
+      <p className="label-sm text-muted">Attribution profile</p>
+      <h2 className="mt-2 text-xl font-semibold tracking-tight">
+        {profile.displayName}
+      </h2>
+      <div className="mt-3 flex flex-wrap gap-2 text-sm text-muted">
+        {profile.primaryEmail ? <span>{profile.primaryEmail}</span> : null}
+        {profile.affiliation ? <span>{profile.affiliation}</span> : null}
+      </div>
+      {researchInterests.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {researchInterests.map((interest) => (
+            <span key={interest} className="chip">
+              {interest}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </section>
   )
 }

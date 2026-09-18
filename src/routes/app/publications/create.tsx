@@ -5,7 +5,6 @@ import type { FormEvent } from 'react'
 
 import {
   FormStatus,
-  ProfileSelect,
   WorkspacePageHeader,
   formString,
   useWorkspace,
@@ -31,6 +30,7 @@ const publicationTypeOptions = [
 
 function CreatePublicationPage() {
   const workspace = useWorkspace()
+  const profile = workspace.myProfiles[0]
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -48,7 +48,6 @@ function CreatePublicationPage() {
     try {
       await createPublicationDraft({
         data: {
-          owningProfileId: formString(formData, 'owningProfileId'),
           title: formString(formData, 'title'),
           abstract: formString(formData, 'abstract'),
           summary: formString(formData, 'summary'),
@@ -88,8 +87,10 @@ function CreatePublicationPage() {
       <WorkspacePageHeader
         eyebrow="Publication draft"
         title="Create publication"
-        description="Create a draft publication from one of your attribution profiles. Publishing, contributors, and review events will build on this record."
+        description="Create a draft publication from your attribution profile. Publishing, contributors, and review events will build on this record."
       />
+
+      <ProfileSummaryCard profile={profile} />
 
       <section className="mt-8 max-w-4xl card-panel bg-white! p-6!">
         <FormStatus
@@ -98,11 +99,6 @@ function CreatePublicationPage() {
         />
 
         <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
-          <label className="field-label" htmlFor="owningProfileId">
-            Attribution profile
-          </label>
-          <ProfileSelect profiles={workspace.myProfiles} />
-
           <label className="field-label" htmlFor="title">
             Publication title
           </label>
@@ -175,5 +171,35 @@ function CreatePublicationPage() {
         </form>
       </section>
     </>
+  )
+}
+
+function ProfileSummaryCard({
+  profile,
+}: {
+  profile: ReturnType<typeof useWorkspace>['myProfiles'][number]
+}) {
+  const researchInterests = profile.researchInterests ?? []
+
+  return (
+    <section className="mt-8 max-w-4xl rounded-md border border-border bg-surface p-4">
+      <p className="label-sm text-muted">Attribution profile</p>
+      <h2 className="mt-2 text-xl font-semibold tracking-tight">
+        {profile.displayName}
+      </h2>
+      <div className="mt-3 flex flex-wrap gap-2 text-sm text-muted">
+        {profile.primaryEmail ? <span>{profile.primaryEmail}</span> : null}
+        {profile.affiliation ? <span>{profile.affiliation}</span> : null}
+      </div>
+      {researchInterests.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {researchInterests.map((interest) => (
+            <span key={interest} className="chip">
+              {interest}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </section>
   )
 }
