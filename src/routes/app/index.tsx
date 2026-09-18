@@ -9,6 +9,7 @@ import {
 } from '#/components/workspace-shell.tsx'
 
 type Workspace = ReturnType<typeof useWorkspace>
+type WorkspaceProfile = Workspace['myProfiles'][number]
 type WorkspaceRole = Workspace['currentUser']['roles'][number]
 type WorkspaceRecord =
   Workspace['recentPublications'][number] | Workspace['recentPatents'][number]
@@ -18,7 +19,8 @@ export const Route = createFileRoute('/app/')({ component: AppDashboard })
 
 function AppDashboard() {
   const workspace = useWorkspace()
-  const hasProfile = workspace.myProfiles.length > 0
+  const profile =
+    workspace.myProfiles.length > 0 ? workspace.myProfiles[0] : null
 
   return (
     <>
@@ -32,10 +34,9 @@ function AppDashboard() {
 
       <RoleBannerList workspace={workspace} />
 
-      <div className="mt-10 grid gap-4 md:grid-cols-4">
+      <div className="mt-10 grid gap-4 md:grid-cols-3">
         <MetricCard label="Faculties" value={workspace.faculties.length} />
         <MetricCard label="Departments" value={workspace.departments.length} />
-        <MetricCard label="My profiles" value={workspace.myProfiles.length} />
         <MetricCard
           label="My draft records"
           value={
@@ -44,7 +45,9 @@ function AppDashboard() {
         />
       </div>
 
-      {!hasProfile ? (
+      {profile ? (
+        <ProfileDashboardCard profile={profile} />
+      ) : (
         <section className="mt-10 card-panel bg-white! p-6!">
           <span className="chip">Profile required</span>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight">
@@ -62,7 +65,7 @@ function AppDashboard() {
             Create profile
           </Link>
         </section>
-      ) : null}
+      )}
 
       <section className="mt-10 grid gap-5 lg:grid-cols-2">
         <RecordDashboardCard
@@ -116,6 +119,65 @@ function AppDashboard() {
         </section>
       ) : null}
     </>
+  )
+}
+
+function ProfileDashboardCard({ profile }: { profile: WorkspaceProfile }) {
+  const researchInterests = profile.researchInterests ?? []
+
+  return (
+    <section className="mt-10 card-panel bg-white! p-6!">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <span className="chip">Your profile</span>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight">
+            {profile.displayName}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            {profile.affiliation ?? 'No affiliation provided yet.'}
+          </p>
+        </div>
+        <Link to="/app/profile" className="button-secondary">
+          View profile
+        </Link>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <ProfileSummaryField
+          label="Profile type"
+          value={profile.profileType.replaceAll('_', ' ')}
+        />
+        <ProfileSummaryField
+          label="Primary email"
+          value={profile.primaryEmail ?? 'Not provided'}
+        />
+        <ProfileSummaryField
+          label="Research interests"
+          value={
+            researchInterests.length > 0
+              ? researchInterests.slice(0, 3).join(', ')
+              : 'Not provided'
+          }
+        />
+      </div>
+    </section>
+  )
+}
+
+function ProfileSummaryField({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className="rounded-sm bg-surface p-4">
+      <p className="label-sm text-muted">{label}</p>
+      <p className="mt-2 text-sm font-medium capitalize text-foreground">
+        {value}
+      </p>
+    </div>
   )
 }
 
