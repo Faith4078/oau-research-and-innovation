@@ -147,6 +147,31 @@ export const authSessions = pgTable(
   ],
 )
 
+export const authPasswordResetTokens = pgTable(
+  'auth_password_reset_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('auth_password_reset_tokens_token_hash_unique').on(
+      table.tokenHash,
+    ),
+    index('auth_password_reset_tokens_user_id_idx').on(table.userId),
+    index('auth_password_reset_tokens_expires_at_idx').on(table.expiresAt),
+  ],
+)
+
 export const faculties = pgTable(
   'faculties',
   {
@@ -490,6 +515,7 @@ export const reviewEvents = pgTable(
 export const authUsersRelations = relations(authUsers, ({ many, one }) => ({
   roles: many(userRoles),
   sessions: many(authSessions),
+  passwordResetTokens: many(authPasswordResetTokens),
   staff: one(staff),
   profiles: many(profiles),
 }))
@@ -500,6 +526,16 @@ export const authSessionsRelations = relations(authSessions, ({ one }) => ({
     references: [authUsers.id],
   }),
 }))
+
+export const authPasswordResetTokensRelations = relations(
+  authPasswordResetTokens,
+  ({ one }) => ({
+    user: one(authUsers, {
+      fields: [authPasswordResetTokens.userId],
+      references: [authUsers.id],
+    }),
+  }),
+)
 
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
   user: one(authUsers, {

@@ -73,6 +73,13 @@ function SignIn() {
             required
           />
 
+          <Link
+            to="/auth/forgot-password"
+            className="justify-self-start text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Forgot password?
+          </Link>
+
           {errorMessage ? <p className="error-copy">{errorMessage}</p> : null}
 
           <button

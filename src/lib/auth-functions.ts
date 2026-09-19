@@ -1,9 +1,12 @@
-import { eq } from 'drizzle-orm'
+import { createHash, randomBytes } from 'node:crypto'
+
+import { and, eq, gt, isNull } from 'drizzle-orm'
 import { createServerFn } from '@tanstack/react-start'
+import { getRequestHeader } from '@tanstack/react-start/server'
 import { z } from 'zod'
 
 import { db } from '#/db/index.ts'
-import { authUsers, userRoles } from '#/db/schema.ts'
+import { authPasswordResetTokens, authUsers, userRoles } from '#/db/schema.ts'
 import { requireServerEnv } from '#/lib/env.server.ts'
 import {
   DUMMY_PASSWORD_HASH,
@@ -14,8 +17,11 @@ import {
   getCurrentSession,
   issueSession,
   revokeCurrentSession,
+  revokeUserSessions,
   switchCurrentSession,
 } from '#/lib/session.server.ts'
+
+const PASSWORD_RESET_TTL_MINUTES = 30
 
 const optionalEmailSchema = z.preprocess(
   (value) =>
@@ -50,12 +56,43 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
+const requestPasswordResetSchema = z.object({
+  email: z.string().email().transform(normalizeEmail),
+})
+
+const resetPasswordSchema = z.object({
+  token: z.string().trim().min(32, 'Reset token is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+})
+
 const switchAccountSchema = z.object({
   sessionId: z.string().uuid(),
 })
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
+}
+
+function createPasswordResetToken() {
+  return randomBytes(32).toString('base64url')
+}
+
+function hashPasswordResetToken(token: string) {
+  return createHash('sha256').update(token).digest('base64url')
+}
+
+function getPasswordResetExpiry() {
+  return new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000)
+}
+
+function getRequestIpAddress() {
+  const forwardedFor = getRequestHeader('x-forwarded-for')
+
+  if (!forwardedFor) {
+    return null
+  }
+
+  return forwardedFor.split(',')[0]?.trim() || null
 }
 
 function isUniqueConstraintError(error: unknown) {
@@ -151,6 +188,99 @@ export const signIn = createServerFn({ method: 'POST' })
       .where(eq(authUsers.id, user.id))
 
     return { ok: true, user: { id: user.id, email: user.email } }
+  })
+
+export const requestPasswordReset = createServerFn({ method: 'POST' })
+  .validator(requestPasswordResetSchema)
+  .handler(async ({ data }) => {
+    requireServerEnv()
+
+    const userRows = await db
+      .select({ id: authUsers.id, status: authUsers.status })
+      .from(authUsers)
+      .where(eq(authUsers.email, data.email))
+      .limit(1)
+    const user = userRows[0] as (typeof userRows)[number] | undefined
+
+    if (!user || user.status !== 'active') {
+      return { ok: true, resetPath: null }
+    }
+
+    const token = createPasswordResetToken()
+    const expiresAt = getPasswordResetExpiry()
+
+    await db.transaction(async (transaction) => {
+      await transaction
+        .update(authPasswordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(
+          and(
+            eq(authPasswordResetTokens.userId, user.id),
+            isNull(authPasswordResetTokens.usedAt),
+          ),
+        )
+
+      await transaction.insert(authPasswordResetTokens).values({
+        userId: user.id,
+        tokenHash: hashPasswordResetToken(token),
+        expiresAt,
+        ipAddress: getRequestIpAddress(),
+        userAgent: getRequestHeader('user-agent') ?? null,
+      })
+    })
+
+    return {
+      ok: true,
+      resetPath: `/auth/reset-password?token=${encodeURIComponent(token)}`,
+    }
+  })
+
+export const resetPassword = createServerFn({ method: 'POST' })
+  .validator(resetPasswordSchema)
+  .handler(async ({ data }) => {
+    requireServerEnv()
+
+    const tokenHash = hashPasswordResetToken(data.token)
+    const resetRows = await db
+      .select({
+        id: authPasswordResetTokens.id,
+        userId: authPasswordResetTokens.userId,
+      })
+      .from(authPasswordResetTokens)
+      .innerJoin(authUsers, eq(authPasswordResetTokens.userId, authUsers.id))
+      .where(
+        and(
+          eq(authPasswordResetTokens.tokenHash, tokenHash),
+          isNull(authPasswordResetTokens.usedAt),
+          gt(authPasswordResetTokens.expiresAt, new Date()),
+          eq(authUsers.status, 'active'),
+        ),
+      )
+      .limit(1)
+    const resetToken = resetRows[0] as (typeof resetRows)[number] | undefined
+
+    if (!resetToken) {
+      throw new Error('This reset link is invalid or expired')
+    }
+
+    await db.transaction(async (transaction) => {
+      await transaction
+        .update(authUsers)
+        .set({
+          passwordHash: await hashPassword(data.password),
+          updatedAt: new Date(),
+        })
+        .where(eq(authUsers.id, resetToken.userId))
+
+      await transaction
+        .update(authPasswordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(authPasswordResetTokens.id, resetToken.id))
+    })
+
+    await revokeUserSessions(resetToken.userId)
+
+    return { ok: true }
   })
 
 export const signOut = createServerFn({ method: 'POST' }).handler(async () => {
