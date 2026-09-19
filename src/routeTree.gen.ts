@@ -26,6 +26,8 @@ import { Route as AppProfileEditRouteImport } from './routes/app/profile/edit'
 import { Route as AppPublicationsIndexRouteImport } from './routes/app/publications/index'
 import { Route as AppPublicationsPublicationIdRouteImport } from './routes/app/publications/$publicationId'
 import { Route as AppPublicationsCreateRouteImport } from './routes/app/publications/create'
+import { Route as AppPatentsPatentIdEditRouteImport } from './routes/app/patents/$patentId/edit'
+import { Route as AppPublicationsPublicationIdEditRouteImport } from './routes/app/publications/$publicationId/edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -113,6 +115,17 @@ const AppPublicationsCreateRoute = AppPublicationsCreateRouteImport.update({
   path: '/publications/create',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPatentsPatentIdEditRoute = AppPatentsPatentIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => AppPatentsPatentIdRoute,
+} as any)
+const AppPublicationsPublicationIdEditRoute =
+  AppPublicationsPublicationIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AppPublicationsPublicationIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -123,15 +136,17 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/departments/create': typeof AppDepartmentsCreateRoute
   '/app/faculties/create': typeof AppFacultiesCreateRoute
-  '/app/patents/$patentId': typeof AppPatentsPatentIdRoute
+  '/app/patents/$patentId': typeof AppPatentsPatentIdRouteWithChildren
   '/app/patents/create': typeof AppPatentsCreateRoute
   '/app/profile/create': typeof AppProfileCreateRoute
   '/app/profile/edit': typeof AppProfileEditRoute
-  '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRoute
+  '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRouteWithChildren
   '/app/publications/create': typeof AppPublicationsCreateRoute
   '/app/patents/': typeof AppPatentsIndexRoute
   '/app/profile/': typeof AppProfileIndexRoute
   '/app/publications/': typeof AppPublicationsIndexRoute
+  '/app/patents/$patentId/edit': typeof AppPatentsPatentIdEditRoute
+  '/app/publications/$publicationId/edit': typeof AppPublicationsPublicationIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,15 +156,17 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/departments/create': typeof AppDepartmentsCreateRoute
   '/app/faculties/create': typeof AppFacultiesCreateRoute
-  '/app/patents/$patentId': typeof AppPatentsPatentIdRoute
+  '/app/patents/$patentId': typeof AppPatentsPatentIdRouteWithChildren
   '/app/patents/create': typeof AppPatentsCreateRoute
   '/app/profile/create': typeof AppProfileCreateRoute
   '/app/profile/edit': typeof AppProfileEditRoute
-  '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRoute
+  '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRouteWithChildren
   '/app/publications/create': typeof AppPublicationsCreateRoute
   '/app/patents': typeof AppPatentsIndexRoute
   '/app/profile': typeof AppProfileIndexRoute
   '/app/publications': typeof AppPublicationsIndexRoute
+  '/app/patents/$patentId/edit': typeof AppPatentsPatentIdEditRoute
+  '/app/publications/$publicationId/edit': typeof AppPublicationsPublicationIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,15 +178,17 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/departments/create': typeof AppDepartmentsCreateRoute
   '/app/faculties/create': typeof AppFacultiesCreateRoute
-  '/app/patents/$patentId': typeof AppPatentsPatentIdRoute
+  '/app/patents/$patentId': typeof AppPatentsPatentIdRouteWithChildren
   '/app/patents/create': typeof AppPatentsCreateRoute
   '/app/profile/create': typeof AppProfileCreateRoute
   '/app/profile/edit': typeof AppProfileEditRoute
-  '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRoute
+  '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRouteWithChildren
   '/app/publications/create': typeof AppPublicationsCreateRoute
   '/app/patents/': typeof AppPatentsIndexRoute
   '/app/profile/': typeof AppProfileIndexRoute
   '/app/publications/': typeof AppPublicationsIndexRoute
+  '/app/patents/$patentId/edit': typeof AppPatentsPatentIdEditRoute
+  '/app/publications/$publicationId/edit': typeof AppPublicationsPublicationIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,6 +210,8 @@ export interface FileRouteTypes {
     | '/app/patents/'
     | '/app/profile/'
     | '/app/publications/'
+    | '/app/patents/$patentId/edit'
+    | '/app/publications/$publicationId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -209,6 +230,8 @@ export interface FileRouteTypes {
     | '/app/patents'
     | '/app/profile'
     | '/app/publications'
+    | '/app/patents/$patentId/edit'
+    | '/app/publications/$publicationId/edit'
   id:
     | '__root__'
     | '/'
@@ -228,6 +251,8 @@ export interface FileRouteTypes {
     | '/app/patents/'
     | '/app/profile/'
     | '/app/publications/'
+    | '/app/patents/$patentId/edit'
+    | '/app/publications/$publicationId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -358,19 +383,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPublicationsCreateRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/patents/$patentId/edit': {
+      id: '/app/patents/$patentId/edit'
+      path: '/edit'
+      fullPath: '/app/patents/$patentId/edit'
+      preLoaderRoute: typeof AppPatentsPatentIdEditRouteImport
+      parentRoute: typeof AppPatentsPatentIdRoute
+    }
+    '/app/publications/$publicationId/edit': {
+      id: '/app/publications/$publicationId/edit'
+      path: '/edit'
+      fullPath: '/app/publications/$publicationId/edit'
+      preLoaderRoute: typeof AppPublicationsPublicationIdEditRouteImport
+      parentRoute: typeof AppPublicationsPublicationIdRoute
+    }
   }
 }
+
+interface AppPatentsPatentIdRouteChildren {
+  AppPatentsPatentIdEditRoute: typeof AppPatentsPatentIdEditRoute
+}
+
+const AppPatentsPatentIdRouteChildren: AppPatentsPatentIdRouteChildren = {
+  AppPatentsPatentIdEditRoute: AppPatentsPatentIdEditRoute,
+}
+
+const AppPatentsPatentIdRouteWithChildren =
+  AppPatentsPatentIdRoute._addFileChildren(AppPatentsPatentIdRouteChildren)
+
+interface AppPublicationsPublicationIdRouteChildren {
+  AppPublicationsPublicationIdEditRoute: typeof AppPublicationsPublicationIdEditRoute
+}
+
+const AppPublicationsPublicationIdRouteChildren: AppPublicationsPublicationIdRouteChildren =
+  {
+    AppPublicationsPublicationIdEditRoute:
+      AppPublicationsPublicationIdEditRoute,
+  }
+
+const AppPublicationsPublicationIdRouteWithChildren =
+  AppPublicationsPublicationIdRoute._addFileChildren(
+    AppPublicationsPublicationIdRouteChildren,
+  )
 
 interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDepartmentsCreateRoute: typeof AppDepartmentsCreateRoute
   AppFacultiesCreateRoute: typeof AppFacultiesCreateRoute
-  AppPatentsPatentIdRoute: typeof AppPatentsPatentIdRoute
+  AppPatentsPatentIdRoute: typeof AppPatentsPatentIdRouteWithChildren
   AppPatentsCreateRoute: typeof AppPatentsCreateRoute
   AppProfileCreateRoute: typeof AppProfileCreateRoute
   AppProfileEditRoute: typeof AppProfileEditRoute
-  AppPublicationsPublicationIdRoute: typeof AppPublicationsPublicationIdRoute
+  AppPublicationsPublicationIdRoute: typeof AppPublicationsPublicationIdRouteWithChildren
   AppPublicationsCreateRoute: typeof AppPublicationsCreateRoute
   AppPatentsIndexRoute: typeof AppPatentsIndexRoute
   AppProfileIndexRoute: typeof AppProfileIndexRoute
@@ -382,11 +447,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppDepartmentsCreateRoute: AppDepartmentsCreateRoute,
   AppFacultiesCreateRoute: AppFacultiesCreateRoute,
-  AppPatentsPatentIdRoute: AppPatentsPatentIdRoute,
+  AppPatentsPatentIdRoute: AppPatentsPatentIdRouteWithChildren,
   AppPatentsCreateRoute: AppPatentsCreateRoute,
   AppProfileCreateRoute: AppProfileCreateRoute,
   AppProfileEditRoute: AppProfileEditRoute,
-  AppPublicationsPublicationIdRoute: AppPublicationsPublicationIdRoute,
+  AppPublicationsPublicationIdRoute:
+    AppPublicationsPublicationIdRouteWithChildren,
   AppPublicationsCreateRoute: AppPublicationsCreateRoute,
   AppPatentsIndexRoute: AppPatentsIndexRoute,
   AppProfileIndexRoute: AppProfileIndexRoute,

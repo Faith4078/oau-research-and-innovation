@@ -1,9 +1,18 @@
-import { Link, createFileRoute, redirect } from '@tanstack/react-router'
+import {
+  Link,
+  createFileRoute,
+  redirect,
+  useRouter,
+} from '@tanstack/react-router'
+import { useState } from 'react'
 
 import type { ReactNode } from 'react'
 
 import { WorkspacePageHeader } from '#/components/workspace-shell.tsx'
-import { getPublicationDetail } from '#/lib/workspace-functions.ts'
+import {
+  getPublicationDetail,
+  updatePublicationOwnerStatus,
+} from '#/lib/workspace-functions.ts'
 
 export const Route = createFileRoute('/app/publications/$publicationId')({
   loader: async ({ params }) => {
@@ -26,7 +35,30 @@ export const Route = createFileRoute('/app/publications/$publicationId')({
 
 function PublicationDetailPage() {
   const { publication } = Route.useLoaderData()
+  const router = useRouter()
   const keywords = publication.keywords ?? []
+  const [statusAction, setStatusAction] = useState<
+    'published' | 'archived' | null
+  >(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  async function handleStatusChange(status: 'published' | 'archived') {
+    setStatusAction(status)
+    setActionError(null)
+
+    try {
+      await updatePublicationOwnerStatus({
+        data: { publicationId: publication.id, status },
+      })
+      await router.invalidate()
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : 'Unable to update publication',
+      )
+    } finally {
+      setStatusAction(null)
+    }
+  }
 
   return (
     <>
@@ -46,10 +78,41 @@ function PublicationDetailPage() {
               {publication.publicationType.replaceAll('_', ' ')}
             </span>
           </div>
-          <Link to="/app/publications" className="button-secondary">
-            Back to publications
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/app/publications/$publicationId/edit"
+              params={{ publicationId: publication.id }}
+              className="button-primary"
+            >
+              Edit publication
+            </Link>
+            {publication.status !== 'published' ? (
+              <button
+                className="button-secondary"
+                type="button"
+                disabled={statusAction !== null}
+                onClick={() => void handleStatusChange('published')}
+              >
+                {statusAction === 'published' ? 'Publishing…' : 'Publish'}
+              </button>
+            ) : null}
+            {publication.status !== 'archived' ? (
+              <button
+                className="button-secondary"
+                type="button"
+                disabled={statusAction !== null}
+                onClick={() => void handleStatusChange('archived')}
+              >
+                {statusAction === 'archived' ? 'Archiving…' : 'Archive'}
+              </button>
+            ) : null}
+            <Link to="/app/publications" className="button-secondary">
+              Back to publications
+            </Link>
+          </div>
         </div>
+
+        {actionError ? <p className="error-copy mt-4">{actionError}</p> : null}
 
         <DetailSection title="Publication information">
           <DetailField
