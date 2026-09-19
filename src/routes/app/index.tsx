@@ -18,6 +18,7 @@ export const Route = createFileRoute('/app/')({ component: AppDashboard })
 
 function AppDashboard() {
   const workspace = useWorkspace()
+  const isAuthor = workspace.currentUser.isAuthor
   const profile =
     workspace.myProfiles.length > 0 ? workspace.myProfiles[0] : null
 
@@ -36,17 +37,20 @@ function AppDashboard() {
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         <MetricCard label="Faculties" value={workspace.faculties.length} />
         <MetricCard label="Departments" value={workspace.departments.length} />
-        <MetricCard
-          label="My draft records"
-          value={
-            workspace.recentPublications.length + workspace.recentPatents.length
-          }
-        />
+        {isAuthor ? (
+          <MetricCard
+            label="My draft records"
+            value={
+              workspace.recentPublications.length +
+              workspace.recentPatents.length
+            }
+          />
+        ) : null}
       </div>
 
       {profile ? (
         <ProfileDashboardCard profile={profile} />
-      ) : (
+      ) : isAuthor ? (
         <section className="mt-10 card-panel bg-white! p-6!">
           <span className="chip">Profile required</span>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight">
@@ -64,12 +68,16 @@ function AppDashboard() {
             Create profile
           </Link>
         </section>
+      ) : (
+        <NonAuthorDashboardCard />
       )}
 
-      <section className="mt-10 grid gap-5">
-        <PublicationDashboardCard records={workspace.recentPublications} />
-        <PatentDashboardCard records={workspace.recentPatents} />
-      </section>
+      {isAuthor ? (
+        <section className="mt-10 grid gap-5">
+          <PublicationDashboardCard records={workspace.recentPublications} />
+          <PatentDashboardCard records={workspace.recentPatents} />
+        </section>
+      ) : null}
 
       {workspace.canManageOrganization ? (
         <section className="mt-10 card-panel bg-white! p-6!">
@@ -131,6 +139,10 @@ function ProfileDashboardCard({ profile }: { profile: WorkspaceProfile }) {
           value={profile.profileType.replaceAll('_', ' ')}
         />
         <ProfileSummaryField
+          label="Authorship"
+          value={profile.isAuthor ? 'Author' : 'Not an author'}
+        />
+        <ProfileSummaryField
           label="Primary email"
           value={profile.primaryEmail ?? 'Not provided'}
         />
@@ -143,6 +155,25 @@ function ProfileDashboardCard({ profile }: { profile: WorkspaceProfile }) {
           }
         />
       </div>
+    </section>
+  )
+}
+
+function NonAuthorDashboardCard() {
+  return (
+    <section className="mt-10 card-panel bg-white! p-6!">
+      <span className="chip">Authorship off</span>
+      <h2 className="mt-4 text-2xl font-semibold tracking-tight">
+        Publication and patent tools are hidden
+      </h2>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
+        This account is currently marked as not an author. You can enable
+        authorship in settings if you need to create publication or patent
+        records later.
+      </p>
+      <Link to="/app/settings" className="button-secondary mt-6">
+        Update settings
+      </Link>
     </section>
   )
 }

@@ -106,6 +106,7 @@ export const authUsers = pgTable(
     passwordHash: text('password_hash').notNull(),
     universityEmail: text('university_email'),
     staffIdentifier: text('staff_identifier'),
+    isAuthor: boolean('is_author').notNull().default(true),
     status: accountStatusEnum('status').notNull().default('active'),
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     lastSignedInAt: timestamp('last_signed_in_at', { withTimezone: true }),
@@ -271,6 +272,7 @@ export const profiles = pgTable(
     profileType: profileTypeEnum('profile_type').notNull().default('external'),
     primaryEmail: text('primary_email'),
     affiliation: text('affiliation'),
+    isAuthor: boolean('is_author').notNull().default(true),
     facultyId: uuid('faculty_id').references(() => faculties.id, {
       onDelete: 'set null',
     }),

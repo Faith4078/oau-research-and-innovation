@@ -14,6 +14,7 @@ export const Route = createFileRoute('/app/profile/')({
 function ProfilePage() {
   const workspace = useWorkspace()
   const profile = workspace.myProfiles.at(0)
+  const isAuthor = workspace.currentUser.isAuthor
 
   return (
     <>
@@ -36,7 +37,7 @@ function ProfilePage() {
             </Link>
           </div>
         </section>
-      ) : (
+      ) : isAuthor ? (
         <section className="mt-8 max-w-3xl card-panel bg-white! p-6!">
           <span className="chip">Profile required</span>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight">
@@ -54,6 +55,20 @@ function ProfilePage() {
             Create profile
           </Link>
         </section>
+      ) : (
+        <section className="mt-8 max-w-3xl card-panel bg-white! p-6!">
+          <span className="chip">Authorship off</span>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight">
+            No author profile required
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-muted">
+            This account is marked as not an author, so publication and patent
+            attribution prompts are hidden.
+          </p>
+          <Link to="/app/settings" className="button-secondary mt-6">
+            Update settings
+          </Link>
+        </section>
       )}
     </>
   )
@@ -69,6 +84,10 @@ function ProfileDetails({ profile }: { profile: Profile }) {
         <ProfileField label="Public email" value={profile.primaryEmail} />
         <ProfileField label="Affiliation" value={profile.affiliation} />
         <ProfileField label="Profile type" value={profile.profileType} />
+        <ProfileField
+          label="Authorship"
+          value={profile.isAuthor ? 'Author' : 'Not an author'}
+        />
       </div>
 
       {profile.researchInterests.length > 0 ? (

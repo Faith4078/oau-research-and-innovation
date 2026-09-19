@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { db } from '#/db/index.ts'
 import {
+  authUsers,
   departments,
   faculties,
   patentStatusValues,
@@ -95,6 +96,10 @@ const createPatentDraftSchema = z.object({
   industryPartner: optionalTextSchema,
 })
 
+const updateAuthorshipSettingsSchema = z.object({
+  isAuthor: z.boolean(),
+})
+
 const publicationDetailSchema = z.object({
   publicationId: z.string().uuid(),
 })
@@ -146,6 +151,7 @@ export const getWorkspaceSnapshot = createServerFn({ method: 'GET' }).handler(
           profileType: profiles.profileType,
           primaryEmail: profiles.primaryEmail,
           affiliation: profiles.affiliation,
+          isAuthor: profiles.isAuthor,
           bio: profiles.bio,
           researchInterests: profiles.researchInterests,
         })
@@ -268,6 +274,7 @@ export const upsertMyProfile = createServerFn({ method: 'POST' })
           displayName: data.displayName,
           primaryEmail: data.primaryEmail,
           affiliation: data.affiliation,
+          isAuthor: user.isAuthor,
           bio: data.bio,
           researchInterests,
           updatedAt: new Date(),
@@ -287,6 +294,7 @@ export const upsertMyProfile = createServerFn({ method: 'POST' })
         profileType: 'staff',
         primaryEmail: data.primaryEmail,
         affiliation: data.affiliation,
+        isAuthor: user.isAuthor,
         bio: data.bio,
         researchInterests,
       })
@@ -356,6 +364,28 @@ export const createPatentDraft = createServerFn({ method: 'POST' })
       .returning({ id: patents.id, title: patents.title })
 
     return { ok: true, patent }
+  })
+
+export const updateAuthorshipSettings = createServerFn({ method: 'POST' })
+  .validator(updateAuthorshipSettingsSchema)
+  .handler(async ({ data }) => {
+    requireServerEnv()
+
+    const { user } = await requireCurrentSession()
+
+    await db.transaction(async (transaction) => {
+      await transaction
+        .update(authUsers)
+        .set({ isAuthor: data.isAuthor, updatedAt: new Date() })
+        .where(eq(authUsers.id, user.id))
+
+      await transaction
+        .update(profiles)
+        .set({ isAuthor: data.isAuthor, updatedAt: new Date() })
+        .where(eq(profiles.userId, user.id))
+    })
+
+    return { ok: true, isAuthor: data.isAuthor }
   })
 
 export const getPublicationDetail = createServerFn({ method: 'GET' })
@@ -462,6 +492,10 @@ export const getPatentDetail = createServerFn({ method: 'GET' })
   })
 
 async function requireOwnedPrimaryProfile(user: SessionUser) {
+  if (!user.isAuthor) {
+    throw new Error('Enable authorship in settings before creating records')
+  }
+
   const profileRows = await db
     .select({
       id: profiles.id,

@@ -29,11 +29,20 @@ const optionalTextSchema = z.preprocess(
   z.string().trim().max(120).optional(),
 )
 
+const optionalBooleanSchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return true
+  }
+
+  return value === true || value === 'true'
+}, z.boolean())
+
 const signUpSchema = z.object({
   email: z.string().email().transform(normalizeEmail),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   universityEmail: optionalEmailSchema,
   staffIdentifier: optionalTextSchema,
+  isAuthor: optionalBooleanSchema.default(true),
 })
 
 const signInSchema = z.object({
@@ -82,6 +91,7 @@ export const signUp = createServerFn({ method: 'POST' })
             passwordHash: await hashPassword(data.password),
             universityEmail: data.universityEmail,
             staffIdentifier: data.staffIdentifier,
+            isAuthor: data.isAuthor,
           })
           .returning({ id: authUsers.id, email: authUsers.email })
 

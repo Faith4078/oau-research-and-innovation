@@ -42,7 +42,8 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
   const [switchingSessionId, setSwitchingSessionId] = useState<string | null>(
     null,
   )
-  const canCreateRecords = workspace.myProfiles.length > 0
+  const canCreateRecords =
+    workspace.currentUser.isAuthor && workspace.myProfiles.length > 0
 
   async function handleSignOut() {
     await signOut()
@@ -76,6 +77,9 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
               </Link>
               <Link to="/app/profile" className="hover:text-primary">
                 Profile
+              </Link>
+              <Link to="/app/settings" className="hover:text-primary">
+                Settings
               </Link>
               <Link to="/app/publications" className="hover:text-primary">
                 My publications

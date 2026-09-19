@@ -27,6 +27,7 @@ function EditProfilePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const primaryProfile = workspace.myProfiles.at(0)
   const hasProfile = workspace.myProfiles.length > 0
+  const isAuthor = workspace.currentUser.isAuthor
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -157,12 +158,19 @@ function EditProfilePage() {
             <Link to="/app/profile" className="button-secondary">
               View profile
             </Link>
-            <Link to="/app/publications/create" className="button-secondary">
-              Create publication
-            </Link>
-            <Link to="/app/patents/create" className="button-secondary">
-              Create patent
-            </Link>
+            {isAuthor ? (
+              <>
+                <Link
+                  to="/app/publications/create"
+                  className="button-secondary"
+                >
+                  Create publication
+                </Link>
+                <Link to="/app/patents/create" className="button-secondary">
+                  Create patent
+                </Link>
+              </>
+            ) : null}
           </div>
         ) : null}
       </section>

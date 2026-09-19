@@ -27,6 +27,10 @@ export async function requireOrganizationManagerPage() {
 export async function requireRecordCreatePage() {
   const workspace = await getWorkspaceOrRedirect()
 
+  if (!workspace.currentUser.isAuthor) {
+    throw redirect({ to: '/app/settings' })
+  }
+
   if (workspace.myProfiles.length === 0) {
     throw redirect({
       to: '/app/profile/edit',

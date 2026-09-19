@@ -26,6 +26,7 @@ function SignUp() {
           password: String(formData.get('password') ?? ''),
           universityEmail: String(formData.get('universityEmail') ?? ''),
           staffIdentifier: String(formData.get('staffIdentifier') ?? ''),
+          isAuthor: String(formData.get('isAuthor') ?? 'true') === 'true',
         },
       })
       await navigate({ to: '/app' })
@@ -102,6 +103,49 @@ function SignUp() {
               />
             </div>
           </div>
+
+          <fieldset className="rounded-md border border-border bg-surface p-4">
+            <legend className="field-label px-1">Authorship</legend>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Authors can create publication and patent records. You can change
+              this later in settings.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-sm border border-border bg-white p-3 text-sm">
+                <input
+                  className="mt-1"
+                  type="radio"
+                  name="isAuthor"
+                  value="true"
+                  defaultChecked
+                />
+                <span>
+                  <span className="block font-medium text-foreground">
+                    I am an author
+                  </span>
+                  <span className="mt-1 block text-muted">
+                    Show author profile prompts and record creation tools.
+                  </span>
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-sm border border-border bg-white p-3 text-sm">
+                <input
+                  className="mt-1"
+                  type="radio"
+                  name="isAuthor"
+                  value="false"
+                />
+                <span>
+                  <span className="block font-medium text-foreground">
+                    I am not an author
+                  </span>
+                  <span className="mt-1 block text-muted">
+                    Hide publication and patent creation prompts.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
 
           {errorMessage ? <p className="error-copy">{errorMessage}</p> : null}
 

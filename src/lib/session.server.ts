@@ -22,6 +22,7 @@ export type SessionUser = {
   email: string
   universityEmail: string | null
   staffIdentifier: string | null
+  isAuthor: boolean
   roles: Array<{
     role: UserRole
     facultyId: string | null
@@ -300,6 +301,7 @@ async function getSessionFromToken(
       email: authUsers.email,
       universityEmail: authUsers.universityEmail,
       staffIdentifier: authUsers.staffIdentifier,
+      isAuthor: authUsers.isAuthor,
     })
     .from(authSessions)
     .innerJoin(authUsers, eq(authSessions.userId, authUsers.id))
@@ -344,6 +346,7 @@ async function getSessionFromToken(
       email: sessionRecord.email,
       universityEmail: sessionRecord.universityEmail,
       staffIdentifier: sessionRecord.staffIdentifier,
+      isAuthor: sessionRecord.isAuthor,
       roles,
     },
   }
