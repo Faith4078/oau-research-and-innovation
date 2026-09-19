@@ -1,33 +1,47 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+
+import type { FormEvent } from 'react'
 
 import { getCurrentUser } from '#/lib/auth-functions.ts'
+import { getPublicDiscovery } from '#/lib/public-functions.ts'
 
 export const Route = createFileRoute('/')({
-  loader: async () => ({ currentUser: await getCurrentUser() }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    q:
+      typeof search.q === 'string' && search.q.trim()
+        ? search.q.trim()
+        : undefined,
+  }),
+  loaderDeps: ({ search }) => search,
+  loader: async ({ deps }) => ({
+    currentUser: await getCurrentUser(),
+    discovery: await getPublicDiscovery({ data: { query: deps.q } }),
+  }),
   component: Home,
 })
 
-const platformStats = [
-  { label: 'Publication workflows', value: 'Core' },
-  { label: 'Patent tracking', value: 'Ready' },
-  { label: 'IPTTO role support', value: 'Day one' },
-]
-
-const focusAreas = [
-  'Curated lecturer and contributor profiles',
-  'Publication and patent ownership through attribution profiles',
-  'Department, faculty, IPTTO, and super-admin role foundations',
-  'Audit-ready review events for institutional publishing decisions',
-]
+type PublicDiscovery = Awaited<ReturnType<typeof getPublicDiscovery>>
+type PublicPublication = PublicDiscovery['publications'][number]
+type PublicPatent = PublicDiscovery['patents'][number]
 
 function Home() {
-  const { currentUser } = Route.useLoaderData()
+  const { currentUser, discovery } = Route.useLoaderData()
+  const search = Route.useSearch()
+  const navigate = useNavigate()
   const isSignedIn = Boolean(currentUser)
+
+  async function handlePublicSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const query = String(formData.get('q') ?? '').trim()
+
+    await navigate({ to: '/', search: { q: query || undefined } })
+  }
 
   return (
     <main>
       <section className="page-shell section-padding">
-        <nav className="mb-24 flex items-center justify-between gap-6">
+        <nav className="mb-16 flex items-center justify-between gap-6">
           <Link to="/" className="brand-mark" aria-label="OAU Research home">
             OAU R&I
           </Link>
@@ -52,78 +66,164 @@ function Home() {
           </div>
         </nav>
 
-        <div className="grid gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
-          <div>
-            <span className="chip mb-5">Research visibility platform</span>
-            <h1 className="headline-display max-w-4xl">
-              A modern institutional home for OAU research outputs and patents.
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
-              Manage lecturer profiles, publication records, patent disclosures,
-              review actions, and innovation office workflows from one clear,
-              role-aware system.
-            </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              {isSignedIn ? (
-                <Link to="/app" className="button-primary">
-                  Go to dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link to="/auth/sign-up" className="button-primary">
-                    Start setup
-                  </Link>
-                  <Link to="/auth/sign-in" className="button-secondary">
-                    Sign in to dashboard
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
+        <div>
+          <span className="chip mb-5">Public research search</span>
+          <h1 className="headline-display max-w-4xl">
+            Search OAU publications and patents.
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
+            Browse publicly published research outputs and patent records from
+            Obafemi Awolowo University.
+          </p>
 
-          <div className="card-panel grid gap-4 p-4">
-            <div className="rounded-lg border border-border bg-white p-5">
-              <p className="label-sm text-primary">Foundation status</p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-                Built for verified institutional data.
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-muted">
-                Accounts, roles, staff records, public attribution profiles,
-                publications, patents, and review events are separated so each
-                workflow can mature without blurring ownership.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {platformStats.map((stat) => (
-                <div key={stat.label} className="metric-card">
-                  <strong>{stat.value}</strong>
-                  <span>{stat.label}</span>
-                </div>
-              ))}
-            </div>
+          <form
+            className="mt-8 grid max-w-3xl gap-3 rounded-lg border border-border bg-white p-3 shadow-[0_18px_60px_rgba(8,8,8,0.08)] sm:grid-cols-[1fr_auto]"
+            onSubmit={handlePublicSearch}
+          >
+            <input
+              className="input-field"
+              name="q"
+              defaultValue={search.q ?? ''}
+              placeholder="Search public publications and patents"
+            />
+            <button className="button-primary" type="submit">
+              Search
+            </button>
+          </form>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <Link to="/publications" className="text-primary hover:underline">
+              Browse all publications
+            </Link>
+            <Link to="/patents" className="text-primary hover:underline">
+              Browse all patents
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-border bg-surface">
+      <section className="border-t border-border bg-surface">
         <div className="page-shell py-20">
-          <div className="grid gap-8 lg:grid-cols-[0.85fr_1fr] lg:items-start">
+          <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
-              <span className="chip">Implementation priorities</span>
-              <h2 className="headline-lg mt-5">
-                Structured for research operations.
-              </h2>
+              <span className="chip">Public records</span>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {focusAreas.map((area) => (
-                <article key={area} className="card-panel min-h-32">
-                  <p className="text-base font-medium leading-7">{area}</p>
-                </article>
-              ))}
-            </div>
+            {search.q ? (
+              <Link
+                to="/"
+                search={{ q: undefined }}
+                className="button-secondary"
+              >
+                Clear search
+              </Link>
+            ) : null}
+          </div>
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            <DiscoverySection
+              title="Publications"
+              browseTo="/publications"
+              browseLabel="View all publications"
+              searchQuery={search.q}
+            >
+              {discovery.publications.length > 0 ? (
+                discovery.publications.map((publication) => (
+                  <PublicationPreview
+                    key={publication.id}
+                    publication={publication}
+                  />
+                ))
+              ) : (
+                <EmptyDiscovery label="No matching publications." />
+              )}
+            </DiscoverySection>
+
+            <DiscoverySection
+              title="Patents"
+              browseTo="/patents"
+              browseLabel="View all patents"
+              searchQuery={search.q}
+            >
+              {discovery.patents.length > 0 ? (
+                discovery.patents.map((patent) => (
+                  <PatentPreview key={patent.id} patent={patent} />
+                ))
+              ) : (
+                <EmptyDiscovery label="No matching patents." />
+              )}
+            </DiscoverySection>
           </div>
         </div>
       </section>
     </main>
   )
+}
+
+function DiscoverySection({
+  title,
+  browseTo,
+  browseLabel,
+  searchQuery,
+  children,
+}: {
+  title: string
+  browseTo: '/publications' | '/patents'
+  browseLabel: string
+  searchQuery: string | undefined
+  children: React.ReactNode
+}) {
+  return (
+    <section className="card-panel bg-white! p-5!">
+      <div className="flex items-center justify-between gap-4">
+        <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+        <Link
+          to={browseTo}
+          search={{ q: searchQuery, page: undefined }}
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          {browseLabel}
+        </Link>
+      </div>
+      <div className="mt-5 grid gap-3">{children}</div>
+    </section>
+  )
+}
+
+function PublicationPreview({
+  publication,
+}: {
+  publication: PublicPublication
+}) {
+  return (
+    <Link
+      to="/publications/$publicationId"
+      params={{ publicationId: publication.id }}
+      className="rounded-md border border-border bg-surface p-4 hover:border-primary/30"
+    >
+      <h4 className="font-semibold tracking-tight">{publication.title}</h4>
+      <p className="mt-2 text-sm leading-6 text-muted">
+        {publication.owningProfileName ?? 'Unknown author'} ·{' '}
+        {publication.publicationYear ?? 'Year not set'}
+      </p>
+    </Link>
+  )
+}
+
+function PatentPreview({ patent }: { patent: PublicPatent }) {
+  return (
+    <Link
+      to="/patents/$patentId"
+      params={{ patentId: patent.id }}
+      className="rounded-md border border-border bg-surface p-4 hover:border-primary/30"
+    >
+      <h4 className="font-semibold tracking-tight">{patent.title}</h4>
+      <p className="mt-2 text-sm leading-6 text-muted">
+        {patent.owningProfileName ?? 'Unknown author'} ·{' '}
+        {patent.patentNumber ?? patent.patentStatus.replaceAll('_', ' ')}
+      </p>
+    </Link>
+  )
+}
+
+function EmptyDiscovery({ label }: { label: string }) {
+  return <p className="text-sm leading-6 text-muted">{label}</p>
 }

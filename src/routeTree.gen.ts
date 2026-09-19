@@ -17,6 +17,12 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
+import { Route as AuthorsIndexRouteImport } from './routes/authors/index'
+import { Route as AuthorsProfileIdRouteImport } from './routes/authors/$profileId'
+import { Route as PatentsIndexRouteImport } from './routes/patents/index'
+import { Route as PatentsPatentIdRouteImport } from './routes/patents/$patentId'
+import { Route as PublicationsIndexRouteImport } from './routes/publications/index'
+import { Route as PublicationsPublicationIdRouteImport } from './routes/publications/$publicationId'
 import { Route as AppDepartmentsCreateRouteImport } from './routes/app/departments/create'
 import { Route as AppFacultiesCreateRouteImport } from './routes/app/faculties/create'
 import { Route as AppPatentsIndexRouteImport } from './routes/app/patents/index'
@@ -71,6 +77,37 @@ const AuthSignUpRoute = AuthSignUpRouteImport.update({
   path: '/auth/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthorsIndexRoute = AuthorsIndexRouteImport.update({
+  id: '/authors/',
+  path: '/authors/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthorsProfileIdRoute = AuthorsProfileIdRouteImport.update({
+  id: '/authors/$profileId',
+  path: '/authors/$profileId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatentsIndexRoute = PatentsIndexRouteImport.update({
+  id: '/patents/',
+  path: '/patents/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatentsPatentIdRoute = PatentsPatentIdRouteImport.update({
+  id: '/patents/$patentId',
+  path: '/patents/$patentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicationsIndexRoute = PublicationsIndexRouteImport.update({
+  id: '/publications/',
+  path: '/publications/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicationsPublicationIdRoute =
+  PublicationsPublicationIdRouteImport.update({
+    id: '/publications/$publicationId',
+    path: '/publications/$publicationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppDepartmentsCreateRoute = AppDepartmentsCreateRouteImport.update({
   id: '/departments/create',
   path: '/departments/create',
@@ -147,7 +184,13 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/authors/$profileId': typeof AuthorsProfileIdRoute
+  '/patents/$patentId': typeof PatentsPatentIdRoute
+  '/publications/$publicationId': typeof PublicationsPublicationIdRoute
   '/app/': typeof AppIndexRoute
+  '/authors/': typeof AuthorsIndexRoute
+  '/patents/': typeof PatentsIndexRoute
+  '/publications/': typeof PublicationsIndexRoute
   '/app/departments/create': typeof AppDepartmentsCreateRoute
   '/app/faculties/create': typeof AppFacultiesCreateRoute
   '/app/patents/$patentId': typeof AppPatentsPatentIdRouteWithChildren
@@ -169,7 +212,13 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/authors/$profileId': typeof AuthorsProfileIdRoute
+  '/patents/$patentId': typeof PatentsPatentIdRoute
+  '/publications/$publicationId': typeof PublicationsPublicationIdRoute
   '/app': typeof AppIndexRoute
+  '/authors': typeof AuthorsIndexRoute
+  '/patents': typeof PatentsIndexRoute
+  '/publications': typeof PublicationsIndexRoute
   '/app/departments/create': typeof AppDepartmentsCreateRoute
   '/app/faculties/create': typeof AppFacultiesCreateRoute
   '/app/patents/$patentId': typeof AppPatentsPatentIdRouteWithChildren
@@ -193,7 +242,13 @@ export interface FileRoutesById {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/authors/$profileId': typeof AuthorsProfileIdRoute
+  '/patents/$patentId': typeof PatentsPatentIdRoute
+  '/publications/$publicationId': typeof PublicationsPublicationIdRoute
   '/app/': typeof AppIndexRoute
+  '/authors/': typeof AuthorsIndexRoute
+  '/patents/': typeof PatentsIndexRoute
+  '/publications/': typeof PublicationsIndexRoute
   '/app/departments/create': typeof AppDepartmentsCreateRoute
   '/app/faculties/create': typeof AppFacultiesCreateRoute
   '/app/patents/$patentId': typeof AppPatentsPatentIdRouteWithChildren
@@ -218,7 +273,13 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/authors/$profileId'
+    | '/patents/$patentId'
+    | '/publications/$publicationId'
     | '/app/'
+    | '/authors/'
+    | '/patents/'
+    | '/publications/'
     | '/app/departments/create'
     | '/app/faculties/create'
     | '/app/patents/$patentId'
@@ -240,7 +301,13 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/authors/$profileId'
+    | '/patents/$patentId'
+    | '/publications/$publicationId'
     | '/app'
+    | '/authors'
+    | '/patents'
+    | '/publications'
     | '/app/departments/create'
     | '/app/faculties/create'
     | '/app/patents/$patentId'
@@ -263,7 +330,13 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/authors/$profileId'
+    | '/patents/$patentId'
+    | '/publications/$publicationId'
     | '/app/'
+    | '/authors/'
+    | '/patents/'
+    | '/publications/'
     | '/app/departments/create'
     | '/app/faculties/create'
     | '/app/patents/$patentId'
@@ -286,6 +359,12 @@ export interface RootRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
+  AuthorsProfileIdRoute: typeof AuthorsProfileIdRoute
+  PatentsPatentIdRoute: typeof PatentsPatentIdRoute
+  PublicationsPublicationIdRoute: typeof PublicationsPublicationIdRoute
+  AuthorsIndexRoute: typeof AuthorsIndexRoute
+  PatentsIndexRoute: typeof PatentsIndexRoute
+  PublicationsIndexRoute: typeof PublicationsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -344,6 +423,48 @@ declare module '@tanstack/react-router' {
       path: '/auth/sign-up'
       fullPath: '/auth/sign-up'
       preLoaderRoute: typeof AuthSignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/authors/': {
+      id: '/authors/'
+      path: '/authors'
+      fullPath: '/authors/'
+      preLoaderRoute: typeof AuthorsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/authors/$profileId': {
+      id: '/authors/$profileId'
+      path: '/authors/$profileId'
+      fullPath: '/authors/$profileId'
+      preLoaderRoute: typeof AuthorsProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patents/': {
+      id: '/patents/'
+      path: '/patents'
+      fullPath: '/patents/'
+      preLoaderRoute: typeof PatentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patents/$patentId': {
+      id: '/patents/$patentId'
+      path: '/patents/$patentId'
+      fullPath: '/patents/$patentId'
+      preLoaderRoute: typeof PatentsPatentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/publications/': {
+      id: '/publications/'
+      path: '/publications'
+      fullPath: '/publications/'
+      preLoaderRoute: typeof PublicationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/publications/$publicationId': {
+      id: '/publications/$publicationId'
+      path: '/publications/$publicationId'
+      fullPath: '/publications/$publicationId'
+      preLoaderRoute: typeof PublicationsPublicationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/departments/create': {
@@ -508,6 +629,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  AuthorsProfileIdRoute: AuthorsProfileIdRoute,
+  PatentsPatentIdRoute: PatentsPatentIdRoute,
+  PublicationsPublicationIdRoute: PublicationsPublicationIdRoute,
+  AuthorsIndexRoute: AuthorsIndexRoute,
+  PatentsIndexRoute: PatentsIndexRoute,
+  PublicationsIndexRoute: PublicationsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
