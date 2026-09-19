@@ -228,25 +228,25 @@ function getRoleBannerText(roleRecord: WorkspaceRole, workspace: Workspace) {
 
   switch (roleRecord.role) {
     case 'faculty_admin':
-      return `you are a faculty admin of ${faculty?.name ?? 'OAU'}`
+      return `You are a faculty admin of ${faculty?.name ?? 'OAU'}`
     case 'department_admin':
-      return `you are a department admin of ${department?.name ?? 'a department'}`
+      return `You are a department admin of ${department?.name ?? 'a department'}`
     case 'iptto_officer':
       return faculty
-        ? `you are an IPTTO officer of ${faculty.name}`
-        : 'you are an IPTTO officer'
+        ? `You are an IPTTO officer of ${faculty.name}`
+        : 'You are an IPTTO officer'
     case 'lecturer':
       if (department) {
-        return `you are a lecturer in ${department.name}`
+        return `You are a lecturer in ${department.name}`
       }
 
       if (faculty) {
-        return `you are a lecturer in ${faculty.name}`
+        return `You are a lecturer in ${faculty.name}`
       }
 
-      return 'you are a lecturer'
+      return 'You are a lecturer'
     case 'super_admin':
-      return 'you are a super admin'
+      return 'You are a super admin'
     case 'user':
       return ''
   }
