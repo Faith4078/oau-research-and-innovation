@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 
 import type { FormEvent } from 'react'
 
@@ -26,9 +26,12 @@ const patentStatusOptions = [
   ['abandoned', 'Abandoned'],
 ] as const
 
+const DETAIL_REDIRECT_DELAY_MS = 900
+
 function CreatePatentPage() {
   const workspace = useWorkspace()
   const profile = workspace.myProfiles[0]
+  const navigate = useNavigate()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -44,7 +47,7 @@ function CreatePatentPage() {
     const formData = new FormData(form)
 
     try {
-      await createPatentDraft({
+      const result = await createPatentDraft({
         data: {
           title: formString(formData, 'title'),
           abstract: formString(formData, 'abstract'),
@@ -67,8 +70,13 @@ function CreatePatentPage() {
         },
       })
       form.reset()
-      setSuccessMessage('Patent draft created.')
+      setSuccessMessage('Patent draft created. Opening details…')
       await router.invalidate()
+      await waitForDetailRedirect()
+      await navigate({
+        to: '/app/patents/$patentId',
+        params: { patentId: result.patent.id },
+      })
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -168,6 +176,12 @@ function CreatePatentPage() {
       </section>
     </>
   )
+}
+
+function waitForDetailRedirect() {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, DETAIL_REDIRECT_DELAY_MS)
+  })
 }
 
 function ProfileSummaryCard({
