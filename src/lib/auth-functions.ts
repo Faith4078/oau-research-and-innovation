@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { db } from '#/db/index.ts'
 import { authPasswordResetTokens, authUsers, userRoles } from '#/db/schema.ts'
 import { requireServerEnv } from '#/lib/env.server.ts'
+import { requireCurrentSession } from '#/lib/permissions.server.ts'
 import {
   DUMMY_PASSWORD_HASH,
   hashPassword,
@@ -17,6 +18,7 @@ import {
   getCurrentSession,
   issueSession,
   revokeCurrentSession,
+  revokeOtherUserSessions,
   revokeUserSessions,
   switchCurrentSession,
 } from '#/lib/session.server.ts'
@@ -63,6 +65,11 @@ const requestPasswordResetSchema = z.object({
 const resetPasswordSchema = z.object({
   token: z.string().trim().min(32, 'Reset token is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+})
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
 const switchAccountSchema = z.object({
@@ -279,6 +286,61 @@ export const resetPassword = createServerFn({ method: 'POST' })
     })
 
     await revokeUserSessions(resetToken.userId)
+
+    return { ok: true }
+  })
+
+export const changePassword = createServerFn({ method: 'POST' })
+  .validator(changePasswordSchema)
+  .handler(async ({ data }) => {
+    requireServerEnv()
+
+    const { sessionId, user } = await requireCurrentSession()
+    const userRows = await db
+      .select({
+        id: authUsers.id,
+        passwordHash: authUsers.passwordHash,
+        status: authUsers.status,
+      })
+      .from(authUsers)
+      .where(eq(authUsers.id, user.id))
+      .limit(1)
+    const authUser = userRows[0] as (typeof userRows)[number] | undefined
+
+    if (!authUser || authUser.status !== 'active') {
+      throw new Error('Unauthorized')
+    }
+
+    const passwordMatches = await verifyPasswordHash(
+      authUser.passwordHash,
+      data.currentPassword,
+    )
+
+    if (!passwordMatches) {
+      throw new Error('Current password is incorrect')
+    }
+
+    await db.transaction(async (transaction) => {
+      await transaction
+        .update(authUsers)
+        .set({
+          passwordHash: await hashPassword(data.newPassword),
+          updatedAt: new Date(),
+        })
+        .where(eq(authUsers.id, authUser.id))
+
+      await transaction
+        .update(authPasswordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(
+          and(
+            eq(authPasswordResetTokens.userId, authUser.id),
+            isNull(authPasswordResetTokens.usedAt),
+          ),
+        )
+    })
+
+    await revokeOtherUserSessions(authUser.id, sessionId)
 
     return { ok: true }
   })

@@ -9,6 +9,7 @@ import {
   formString,
   useWorkspace,
 } from '#/components/workspace-shell.tsx'
+import { changePassword } from '#/lib/auth-functions.ts'
 import { updateAuthorshipSettings } from '#/lib/workspace-functions.ts'
 
 export const Route = createFileRoute('/app/settings')({
@@ -18,15 +19,26 @@ export const Route = createFileRoute('/app/settings')({
 function SettingsPage() {
   const workspace = useWorkspace()
   const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isAuthorshipSubmitting, setIsAuthorshipSubmitting] = useState(false)
+  const [authorshipSuccessMessage, setAuthorshipSuccessMessage] = useState<
+    string | null
+  >(null)
+  const [authorshipErrorMessage, setAuthorshipErrorMessage] = useState<
+    string | null
+  >(null)
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false)
+  const [passwordSuccessMessage, setPasswordSuccessMessage] = useState<
+    string | null
+  >(null)
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState<
+    string | null
+  >(null)
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleAuthorshipSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setIsSubmitting(true)
-    setSuccessMessage(null)
-    setErrorMessage(null)
+    setIsAuthorshipSubmitting(true)
+    setAuthorshipSuccessMessage(null)
+    setAuthorshipErrorMessage(null)
 
     const formData = new FormData(event.currentTarget)
 
@@ -34,14 +46,45 @@ function SettingsPage() {
       await updateAuthorshipSettings({
         data: { isAuthor: formString(formData, 'isAuthor') === 'true' },
       })
-      setSuccessMessage('Settings saved.')
+      setAuthorshipSuccessMessage('Settings saved.')
       await router.invalidate()
     } catch (error) {
-      setErrorMessage(
+      setAuthorshipErrorMessage(
         error instanceof Error ? error.message : 'Unable to save settings',
       )
     } finally {
-      setIsSubmitting(false)
+      setIsAuthorshipSubmitting(false)
+    }
+  }
+
+  async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setPasswordSuccessMessage(null)
+    setPasswordErrorMessage(null)
+
+    const form = event.currentTarget
+    const formData = new FormData(form)
+    const currentPassword = formString(formData, 'currentPassword')
+    const newPassword = formString(formData, 'newPassword')
+    const confirmPassword = formString(formData, 'confirmPassword')
+
+    if (newPassword !== confirmPassword) {
+      setPasswordErrorMessage('Passwords do not match')
+      return
+    }
+
+    setIsPasswordSubmitting(true)
+
+    try {
+      await changePassword({ data: { currentPassword, newPassword } })
+      setPasswordSuccessMessage('Password changed successfully.')
+      form.reset()
+    } catch (error) {
+      setPasswordErrorMessage(
+        error instanceof Error ? error.message : 'Unable to change password',
+      )
+    } finally {
+      setIsPasswordSubmitting(false)
     }
   }
 
@@ -55,11 +98,11 @@ function SettingsPage() {
 
       <section className="mt-8 max-w-3xl card-panel bg-white! p-6!">
         <FormStatus
-          successMessage={successMessage}
-          errorMessage={errorMessage}
+          successMessage={authorshipSuccessMessage}
+          errorMessage={authorshipErrorMessage}
         />
 
-        <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+        <form className="mt-6 grid gap-4" onSubmit={handleAuthorshipSubmit}>
           <fieldset className="grid gap-3">
             <legend className="field-label">Authorship mode</legend>
             <label className="flex cursor-pointer items-start gap-3 rounded-sm border border-border bg-surface p-4 text-sm">
@@ -102,9 +145,74 @@ function SettingsPage() {
           <button
             className="button-primary mt-2"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isAuthorshipSubmitting}
           >
-            {isSubmitting ? 'Saving…' : 'Save settings'}
+            {isAuthorshipSubmitting ? 'Saving…' : 'Save settings'}
+          </button>
+        </form>
+      </section>
+
+      <section className="mt-8 max-w-3xl card-panel bg-white! p-6!">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Change password
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-muted">
+            Update your account password. Other active sessions for this account
+            will be signed out.
+          </p>
+        </div>
+
+        <FormStatus
+          successMessage={passwordSuccessMessage}
+          errorMessage={passwordErrorMessage}
+        />
+
+        <form className="mt-6 grid gap-4" onSubmit={handlePasswordSubmit}>
+          <label className="field-label" htmlFor="currentPassword">
+            Current password
+          </label>
+          <input
+            className="input-field"
+            id="currentPassword"
+            name="currentPassword"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+
+          <label className="field-label" htmlFor="newPassword">
+            New password
+          </label>
+          <input
+            className="input-field"
+            id="newPassword"
+            name="newPassword"
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+
+          <label className="field-label" htmlFor="confirmPassword">
+            Confirm new password
+          </label>
+          <input
+            className="input-field"
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+
+          <button
+            className="button-primary mt-2"
+            type="submit"
+            disabled={isPasswordSubmitting}
+          >
+            {isPasswordSubmitting ? 'Changing password…' : 'Change password'}
           </button>
         </form>
       </section>

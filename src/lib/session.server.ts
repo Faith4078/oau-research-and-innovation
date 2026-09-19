@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { createHash, randomBytes } from 'node:crypto'
 
-import { and, eq, gt, isNull } from 'drizzle-orm'
+import { and, eq, gt, isNull, ne } from 'drizzle-orm'
 import {
   getRequestHeader,
   setResponseHeader,
@@ -285,6 +285,22 @@ export async function revokeUserSessions(userId: string) {
     .update(authSessions)
     .set({ revokedAt: new Date() })
     .where(and(eq(authSessions.userId, userId), isNull(authSessions.revokedAt)))
+}
+
+export async function revokeOtherUserSessions(
+  userId: string,
+  currentSessionId: string,
+) {
+  await db
+    .update(authSessions)
+    .set({ revokedAt: new Date() })
+    .where(
+      and(
+        eq(authSessions.userId, userId),
+        ne(authSessions.id, currentSessionId),
+        isNull(authSessions.revokedAt),
+      ),
+    )
 }
 
 async function getSessionFromToken(
