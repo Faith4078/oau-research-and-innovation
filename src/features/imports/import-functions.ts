@@ -196,32 +196,55 @@ export const promoteImportCandidates = createServerFn({ method: 'POST' })
     ))
 
     let promoted = 0
+    let created = 0
+    let linked = 0
     for (const candidate of candidates) {
       if (candidate.matchedPublicationId) continue
       await db.transaction(async (transaction) => {
-        const [publication] = await transaction.insert(publications).values({
-          createdByUserId: user.id,
-          owningProfileId: profile.id,
-          facultyId: profile.facultyId,
-          departmentId: profile.departmentId,
-          title: candidate.title,
-          slug: `${slugify(candidate.title)}-${candidate.id.slice(0, 8)}`,
-          abstract: candidate.abstract,
-          publicationType: candidate.publicationType,
-          publicationYear: candidate.publicationYear,
-          venueName: candidate.venueName,
-          doi: candidate.normalizedDoi,
-          sourceUrl: candidate.sourceUrl,
-          originSource: candidate.source,
-          status: 'draft',
-        }).returning({ id: publications.id })
+        const existingRows = candidate.normalizedDoi
+          ? await transaction
+              .select({ id: publications.id })
+              .from(publications)
+              .where(
+                or(
+                  eq(publications.doi, candidate.normalizedDoi),
+                  eq(publications.doi, `https://doi.org/${candidate.normalizedDoi}`),
+                  eq(publications.doi, `http://doi.org/${candidate.normalizedDoi}`),
+                ),
+              )
+              .limit(1)
+          : []
+        const existingPublication = existingRows[0] as
+          | (typeof existingRows)[number]
+          | undefined
+        const publication = (existingPublication ?? (
+          await transaction.insert(publications).values({
+            createdByUserId: user.id,
+            owningProfileId: profile.id,
+            facultyId: profile.facultyId,
+            departmentId: profile.departmentId,
+            title: candidate.title,
+            slug: `${slugify(candidate.title)}-${candidate.id.slice(0, 8)}`,
+            abstract: candidate.abstract,
+            publicationType: candidate.publicationType,
+            publicationYear: candidate.publicationYear,
+            venueName: candidate.venueName,
+            doi: candidate.normalizedDoi,
+            sourceUrl: candidate.sourceUrl,
+            originSource: candidate.source,
+            status: 'draft',
+          }).returning({ id: publications.id })
+        )[0]) as { id: string } | undefined
+
+        if (!publication) throw new Error('Could not create publication')
+
         await transaction.insert(publicationContributors).values({
           publicationId: publication.id,
           profileId: profile.id,
           contributorRole: 'author',
           authorOrder: 1,
-          isPrimary: true,
-        })
+          isPrimary: !existingPublication,
+        }).onConflictDoNothing()
         await transaction.update(fetchedPublicationCandidates).set({
           decision: 'promoted',
           matchedPublicationId: publication.id,
@@ -229,11 +252,14 @@ export const promoteImportCandidates = createServerFn({ method: 'POST' })
           decidedAt: new Date(),
           updatedAt: new Date(),
         }).where(eq(fetchedPublicationCandidates.id, candidate.id))
+
+        if (existingPublication) linked += 1
+        else created += 1
       })
       promoted += 1
     }
 
-    return { ok: true, promoted }
+    return { ok: true, promoted, created, linked }
   })
 
 async function processOpenAlexImportJob(jobId: string) {

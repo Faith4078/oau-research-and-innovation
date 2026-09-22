@@ -87,7 +87,7 @@ function ImportPublicationsPage() {
     setBusy(true); setError(null)
     try {
       const result = await promoteImportCandidates({ data: { jobId: dashboard.latestJob.id } })
-      setSuccess(`${result.promoted} publication${result.promoted === 1 ? '' : 's'} added as private drafts.`)
+      setSuccess(`${result.created} draft${result.created === 1 ? '' : 's'} created${result.linked ? ` · ${result.linked} existing co-authored publication${result.linked === 1 ? '' : 's'} linked` : ''}.`)
       await loadDashboard()
       await router.invalidate()
     } catch (caught) { setError(messageOf(caught)) } finally { setBusy(false) }
