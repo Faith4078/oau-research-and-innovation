@@ -22,6 +22,13 @@
       "when": 1789823120272,
       "tag": "0002_smart_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789942902537,
+      "tag": "0003_lethal_scarecrow",
+      "breakpoints": true
     }
   ]
 }

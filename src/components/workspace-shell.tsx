@@ -84,6 +84,11 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
               <Link to="/app/publications" className="hover:text-primary">
                 My publications
               </Link>
+              {canCreateRecords ? (
+                <Link to="/app/imports" className="hover:text-primary">
+                  Import publications
+                </Link>
+              ) : null}
               <Link to="/app/patents" className="hover:text-primary">
                 My patents
               </Link>

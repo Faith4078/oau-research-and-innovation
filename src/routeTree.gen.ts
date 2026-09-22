@@ -25,6 +25,7 @@ import { Route as PublicationsIndexRouteImport } from './routes/publications/ind
 import { Route as PublicationsPublicationIdRouteImport } from './routes/publications/$publicationId'
 import { Route as AppDepartmentsCreateRouteImport } from './routes/app/departments/create'
 import { Route as AppFacultiesCreateRouteImport } from './routes/app/faculties/create'
+import { Route as AppImportsIndexRouteImport } from './routes/app/imports/index'
 import { Route as AppPatentsIndexRouteImport } from './routes/app/patents/index'
 import { Route as AppPatentsPatentIdRouteImport } from './routes/app/patents/$patentId'
 import { Route as AppPatentsCreateRouteImport } from './routes/app/patents/create'
@@ -118,6 +119,11 @@ const AppFacultiesCreateRoute = AppFacultiesCreateRouteImport.update({
   path: '/faculties/create',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImportsIndexRoute = AppImportsIndexRouteImport.update({
+  id: '/imports/',
+  path: '/imports/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPatentsIndexRoute = AppPatentsIndexRouteImport.update({
   id: '/patents/',
   path: '/patents/',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/app/profile/edit': typeof AppProfileEditRoute
   '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRouteWithChildren
   '/app/publications/create': typeof AppPublicationsCreateRoute
+  '/app/imports/': typeof AppImportsIndexRoute
   '/app/patents/': typeof AppPatentsIndexRoute
   '/app/profile/': typeof AppProfileIndexRoute
   '/app/publications/': typeof AppPublicationsIndexRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/app/profile/edit': typeof AppProfileEditRoute
   '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRouteWithChildren
   '/app/publications/create': typeof AppPublicationsCreateRoute
+  '/app/imports': typeof AppImportsIndexRoute
   '/app/patents': typeof AppPatentsIndexRoute
   '/app/profile': typeof AppProfileIndexRoute
   '/app/publications': typeof AppPublicationsIndexRoute
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/app/profile/edit': typeof AppProfileEditRoute
   '/app/publications/$publicationId': typeof AppPublicationsPublicationIdRouteWithChildren
   '/app/publications/create': typeof AppPublicationsCreateRoute
+  '/app/imports/': typeof AppImportsIndexRoute
   '/app/patents/': typeof AppPatentsIndexRoute
   '/app/profile/': typeof AppProfileIndexRoute
   '/app/publications/': typeof AppPublicationsIndexRoute
@@ -288,6 +297,7 @@ export interface FileRouteTypes {
     | '/app/profile/edit'
     | '/app/publications/$publicationId'
     | '/app/publications/create'
+    | '/app/imports/'
     | '/app/patents/'
     | '/app/profile/'
     | '/app/publications/'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/app/profile/edit'
     | '/app/publications/$publicationId'
     | '/app/publications/create'
+    | '/app/imports'
     | '/app/patents'
     | '/app/profile'
     | '/app/publications'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/app/profile/edit'
     | '/app/publications/$publicationId'
     | '/app/publications/create'
+    | '/app/imports/'
     | '/app/patents/'
     | '/app/profile/'
     | '/app/publications/'
@@ -481,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFacultiesCreateRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/imports/': {
+      id: '/app/imports/'
+      path: '/imports'
+      fullPath: '/app/imports/'
+      preLoaderRoute: typeof AppImportsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/patents/': {
       id: '/app/patents/'
       path: '/patents'
@@ -598,6 +617,7 @@ interface AppRouteChildren {
   AppProfileEditRoute: typeof AppProfileEditRoute
   AppPublicationsPublicationIdRoute: typeof AppPublicationsPublicationIdRouteWithChildren
   AppPublicationsCreateRoute: typeof AppPublicationsCreateRoute
+  AppImportsIndexRoute: typeof AppImportsIndexRoute
   AppPatentsIndexRoute: typeof AppPatentsIndexRoute
   AppProfileIndexRoute: typeof AppProfileIndexRoute
   AppPublicationsIndexRoute: typeof AppPublicationsIndexRoute
@@ -615,6 +635,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPublicationsPublicationIdRoute:
     AppPublicationsPublicationIdRouteWithChildren,
   AppPublicationsCreateRoute: AppPublicationsCreateRoute,
+  AppImportsIndexRoute: AppImportsIndexRoute,
   AppPatentsIndexRoute: AppPatentsIndexRoute,
   AppProfileIndexRoute: AppProfileIndexRoute,
   AppPublicationsIndexRoute: AppPublicationsIndexRoute,

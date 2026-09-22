@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
   unique,
@@ -73,6 +74,11 @@ export const reviewDecisionValues = [
   'archived',
 ] as const
 
+export const importSourceValues = ['openalex', 'semantic_scholar', 'orcid', 'crossref', 'csv', 'bibtex', 'manual'] as const
+export const importStatusValues = ['not_started', 'pending', 'running', 'review_ready', 'partial', 'failed', 'succeeded'] as const
+export const importJobStatusValues = ['queued', 'running', 'succeeded', 'failed', 'cancelled'] as const
+export const candidateDecisionValues = ['pending', 'kept', 'edited', 'discarded', 'promoted'] as const
+
 export const accountStatusEnum = pgEnum('account_status', accountStatusValues)
 export const userRoleEnum = pgEnum('user_role', userRoleValues)
 export const profileTypeEnum = pgEnum('profile_type', profileTypeValues)
@@ -86,6 +92,10 @@ export const reviewDecisionEnum = pgEnum(
   'review_decision',
   reviewDecisionValues,
 )
+export const importSourceEnum = pgEnum('import_source', importSourceValues)
+export const importStatusEnum = pgEnum('import_status', importStatusValues)
+export const importJobStatusEnum = pgEnum('import_job_status', importJobStatusValues)
+export const candidateDecisionEnum = pgEnum('candidate_decision', candidateDecisionValues)
 
 export type UserRole = (typeof userRoleValues)[number]
 
@@ -311,6 +321,8 @@ export const profiles = pgTable(
     openalexAuthorId: text('openalex_author_id'),
     semanticScholarAuthorId: text('semantic_scholar_author_id'),
     scholarProfileUrl: text('scholar_profile_url'),
+    importStatus: importStatusEnum('import_status').notNull().default('not_started'),
+    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
@@ -355,6 +367,7 @@ export const publications = pgTable(
     documentUrl: text('document_url'),
     fundingInformation: text('funding_information'),
     collaborationDetails: text('collaboration_details'),
+    originSource: importSourceEnum('origin_source'),
     status: recordStatusEnum('status').notNull().default('draft'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     ...timestamps,
@@ -370,6 +383,68 @@ export const publications = pgTable(
     index('publications_faculty_id_idx').on(table.facultyId),
     index('publications_publication_type_idx').on(table.publicationType),
     index('publications_owning_profile_id_idx').on(table.owningProfileId),
+  ],
+)
+
+export const publicationImportJobs = pgTable(
+  'publication_import_jobs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    profileId: uuid('profile_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+    createdByUserId: uuid('created_by_user_id').references(() => authUsers.id, { onDelete: 'set null' }),
+    source: importSourceEnum('source').notNull(),
+    externalAuthorId: text('external_author_id').notNull(),
+    status: importJobStatusEnum('status').notNull().default('queued'),
+    cursor: text('cursor'),
+    expectedCount: integer('expected_count'),
+    processedCount: integer('processed_count').notNull().default(0),
+    candidateCount: integer('candidate_count').notNull().default(0),
+    duplicateCount: integer('duplicate_count').notNull().default(0),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    errorMessage: text('error_message'),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    index('publication_import_jobs_profile_id_idx').on(table.profileId),
+    index('publication_import_jobs_status_idx').on(table.status),
+  ],
+)
+
+export const fetchedPublicationCandidates = pgTable(
+  'fetched_publication_candidates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    importJobId: uuid('import_job_id').notNull().references(() => publicationImportJobs.id, { onDelete: 'cascade' }),
+    profileId: uuid('profile_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+    source: importSourceEnum('source').notNull(),
+    externalWorkId: text('external_work_id').notNull(),
+    title: text('title').notNull(),
+    normalizedTitle: text('normalized_title').notNull(),
+    authors: jsonb('authors').$type<Array<{ name: string; id?: string }>>().notNull().default([]),
+    abstract: text('abstract'),
+    venueName: text('venue_name'),
+    publicationYear: integer('publication_year'),
+    publicationType: publicationTypeEnum('publication_type').notNull().default('other'),
+    doi: text('doi'),
+    normalizedDoi: text('normalized_doi'),
+    sourceUrl: text('source_url'),
+    citationCount: integer('citation_count'),
+    matchConfidence: real('match_confidence'),
+    qualityFlags: jsonb('quality_flags').$type<string[]>().notNull().default([]),
+    rawPayload: jsonb('raw_payload').notNull(),
+    decision: candidateDecisionEnum('decision').notNull().default('pending'),
+    decidedByUserId: uuid('decided_by_user_id').references(() => authUsers.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    matchedPublicationId: uuid('matched_publication_id').references(() => publications.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (table) => [
+    unique('fetched_candidates_job_external_work_unique').on(table.importJobId, table.externalWorkId),
+    index('fetched_candidates_job_decision_idx').on(table.importJobId, table.decision),
+    index('fetched_candidates_profile_doi_idx').on(table.profileId, table.normalizedDoi),
+    index('fetched_candidates_profile_title_year_idx').on(table.profileId, table.normalizedTitle, table.publicationYear),
   ],
 )
 
